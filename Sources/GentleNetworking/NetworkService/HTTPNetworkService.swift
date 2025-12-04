@@ -1,0 +1,82 @@
+//  Jonathan Ritchey
+import Foundation
+
+public struct HTTPNetworkService: NetworkServiceProtocol {
+    let session: URLSession
+    let authService: AuthServiceProtocol
+    let invalidationHandler: TokenInvalidationHandler?
+    let jsonDecoder: JSONDecoder
+    
+    public init(
+        session: URLSession = .shared,
+        authService: AuthServiceProtocol,
+        invalidationHandler: TokenInvalidationHandler? = nil,
+        jsonDecoder: JSONDecoder? = nil
+    ) {
+        self.session = session
+        self.authService = authService
+        self.invalidationHandler = invalidationHandler
+        self.jsonDecoder = jsonDecoder ?? Self.makeDefaultDecoder()
+    }
+    
+    public func request<Model: Decodable>(
+        to endpoint: EndpointProtocol,
+        via environment: APIEnvironmentProtocol
+    ) async throws -> Model {
+        let (data, _) = try await getData(from: endpoint, via: environment)
+        return try jsonDecoder.decode(Model.self, from: data)
+    }
+    
+    public func requestModels<Model: Decodable>(
+        to endpoint: EndpointProtocol,
+        via environment: APIEnvironmentProtocol
+    ) async throws -> [Model] {
+        let (data, _) = try await getData(from: endpoint, via: environment)
+        return try jsonDecoder.decode([Model].self, from: data)
+    }
+    
+    public func requestVoid(
+        to endpoint: EndpointProtocol,
+        via environment: APIEnvironmentProtocol
+    ) async throws -> NetworkServiceEmptyResponseResult {
+        let (_, response) = try await getData(from: endpoint, via: environment)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw NetworkError.invalidStatusCode((response as? HTTPURLResponse)?.statusCode ?? 500)
+        }
+        return .success(code: http.statusCode)
+    }
+    
+    private func getData(
+        from endpoint: EndpointProtocol,
+        via environment: APIEnvironmentProtocol
+    ) async throws -> (Data, URLResponse) {
+        var request = endpoint.from(environment.baseURL)
+        if endpoint.requiresAuth {
+            request = try authService.authorize(request)
+        }
+        let (data, response) = try await session.data(for: request)
+        // ✅ DEBUG: print raw text if possible
+        print("➡️ \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
+        if let text = String(data: data, encoding: .utf8) {
+            print("🔍 Response Text:\n\(text)")
+        } else {
+            print("🔍 Response Data (non-UTF8, \(data.count) bytes)")
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw NetworkError.invalidStatusCode((response as? HTTPURLResponse)?.statusCode)
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 401 {
+                await invalidationHandler?.handleInvalidToken()
+            }
+            throw NetworkError.invalidStatusCode((response as? HTTPURLResponse)?.statusCode)
+        }
+        return (data, response)
+    }
+    
+    private static func makeDefaultDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = DateDecodingStrategies.iso8601FractionalAndNonFractionalSeconds
+        return decoder
+    }
+}
