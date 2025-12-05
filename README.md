@@ -41,7 +41,9 @@ standalone Swift Package for reuse across projects.
 ``` swift
 import GentleNetworking
 
-    let apiEnvironment = DefaultAPIEnvironment(baseURL: URL(string: "https://api.company.edu"))
+    let apiEnvironment = DefaultAPIEnvironment(
+        baseURL: URL(string: "https://api.company.edu")
+    )
 
 ```
 
@@ -62,14 +64,20 @@ import GentleNetworking
         let token: String
     }
 
-    let signInEndpoint = Endpoint(path: "/signIn", method: .post, body: ["user": "test", "password": "12345"])
-
-    let authTokenModel: AuthTokenModel = try await networkService.request(
-            to: signInEndpoint,
-            via: apiEnvironment
+    let signInEndpoint = Endpoint(
+    	path: "/signIn", 
+        method: .post, 
+        body: ["user": "test", "password": "12345"]
     )
 
-    try serviceDependencies.authService.saveAccessToken(authTokenModel.token)
+    let authTokenModel: AuthTokenModel = try await networkService.request(
+        to: signInEndpoint,
+        via: apiEnvironment
+    )
+
+    try serviceDependencies.authService.saveAccessToken(
+        authTokenModel.token
+    )
 ```
 
 ---
@@ -81,18 +89,32 @@ import GentleNetworking
         let property: String
     }
 
-    let modelEndpoint = Endpoint(path: "/model/123", method: .get, requiresAuth: true)
+    let modelEndpoint = Endpoint(
+        path: "/model/123", 
+        method: .get, 
+        requiresAuth: true
+    )
 
-	let model: Model = try await networkService.request(to: modelEndpoint, via: apiEnvironment)
+	let model: Model = try await networkService.request(
+        to: modelEndpoint, 
+        via: apiEnvironment
+    )
 ```
 
 ---
 ### 5. Request an Array of Models
 
 ``` swift
-    let modelsEndpoint = Endpoint(path: "/models", method: .get, requiresAuth: true)
+    let modelsEndpoint = Endpoint(
+        path: "/models", 
+        method: .get, 
+        requiresAuth: true
+    )
 
-	let models: [Model] = try await networkService.requestModels(to: modelsEndpoint, via: apiEnvironment)
+	let models: [Model] = try await networkService.requestModels(
+        to: modelsEndpoint, 
+        via: apiEnvironment
+    )
 ```
 
 ---
