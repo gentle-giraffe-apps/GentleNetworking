@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "3F86F52E-5788-4DEA-B546-1FBFE7213B0A",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "GentleNetworkingTests",
+        "name" : "GentleNetworkingTests"
+      }
+    }
+  ],
+  "version" : 1
+}
