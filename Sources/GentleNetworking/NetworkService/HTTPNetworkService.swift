@@ -9,7 +9,7 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
     
     public init(
         session: URLSession = .shared,
-        authService: AuthServiceProtocol,
+        authService: AuthServiceProtocol = SystemKeyChainAuthService(),
         invalidationHandler: TokenInvalidationHandler? = nil,
         jsonDecoder: JSONDecoder? = nil
     ) {

@@ -34,9 +34,3 @@ public extension AuthServiceProtocol {
         try keyChainStore.deleteValue(forKey: keyChainKey)
     }
 }
-
-public struct SystemKeyChainAuthService: AuthServiceProtocol {
-    public let keyChainStore: any KeyChainStoreProtocol = SystemKeyChainStore()
-    public init() {
-    }
-}

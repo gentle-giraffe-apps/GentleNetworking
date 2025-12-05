@@ -36,14 +36,58 @@ and testable abstractions.
 
 ## 🚀 Basic Usage
 
-### 1. Define an API Environment
+### 1. Define an API and Endpoints
 
 ``` swift
 import GentleNetworking
 
     let apiEnvironment = DefaultAPIEnvironment(
-        baseURL: URL(string: "https://api.company.edu")
+        baseURL: URL(string: "https://api.company.com")
     )
+
+    enum APIEndpoint {
+        case signIn(username: String, password: String)
+        case model(id: Int)
+        case models
+    }
+
+    extension APIEndpoint: EndpointProtocol {
+    
+        var path: String {
+            switch self {
+            case .signIn: "/api/signIn"
+            case .model(let id): "/api/model/\(id)"
+            case .models: "/api/models"
+            }
+        }
+
+        var method: HTTPMethod {
+            switch self {
+            case .signIn: .post
+            case .model, .models: .get
+            }
+        }
+
+        var query: [URLQueryItem]? {
+            switch self {
+            case .signIn, .model, .models: nil
+            }
+        }
+
+        var body: [String : Any]? {
+            switch self {
+            case .signIn(let username, let password): [ "username": username, "password": password ]
+            case .model, .models: nil
+            }
+        }
+        
+        var requiresAuth: Bool {
+            switch self {
+            case .model, .models: true
+            case .signIn(username: _, password: _): false
+            }
+        }
+    }
 
 ```
 
@@ -52,7 +96,6 @@ import GentleNetworking
 ### 2. Create a Network Service
 
 ``` swift
-    let keyChainAuthService = SystemKeyChainAuthService()
 	let networkService = HTTPNetworkService(authService: keyChainAuthService)
 ```
 
@@ -61,18 +104,14 @@ import GentleNetworking
 ### 3. Authenticate if Needed
 
 ``` swift
+    let keyChainAuthService = SystemKeyChainAuthService()
+
     struct AuthTokenModel: Decodable, Sendable {
         let token: String
     }
 
-    let signInEndpoint = Endpoint(
-    	path: "/signIn", 
-        method: .post, 
-        body: ["user": "test", "password": "12345"]
-    )
-
     let authTokenModel: AuthTokenModel = try await networkService.request(
-        to: signInEndpoint,
+        to: .signIn(username, password),
         via: apiEnvironment
     )
 
@@ -90,14 +129,8 @@ import GentleNetworking
         let property: String
     }
 
-    let modelEndpoint = Endpoint(
-        path: "/model/123", 
-        method: .get, 
-        requiresAuth: true
-    )
-
 	let model: Model = try await networkService.request(
-        to: modelEndpoint, 
+        to: .model, 
         via: apiEnvironment
     )
 ```
@@ -106,14 +139,8 @@ import GentleNetworking
 ### 5. Request an Array of Models
 
 ``` swift
-    let modelsEndpoint = Endpoint(
-        path: "/models", 
-        method: .get, 
-        requiresAuth: true
-    )
-
 	let models: [Model] = try await networkService.requestModels(
-        to: modelsEndpoint, 
+        to: .models, 
         via: apiEnvironment
     )
 ```
