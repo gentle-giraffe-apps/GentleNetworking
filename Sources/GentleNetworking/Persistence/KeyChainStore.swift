@@ -59,8 +59,15 @@ public final class SystemKeyChainStore: KeyChainStoreProtocol {
 
         var attributes = query
         attributes[kSecValueData as String] = data
+        attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
 
         let status = SecItemAdd(attributes as CFDictionary, nil)
+
+        #if DEBUG
+        if status == errSecMissingEntitlement {
+            print("Keychain error: Missing entitlements (-34018). If this is a SwiftPM test, use a host app test target or assert this failure intentionally.")
+        }
+        #endif
 
         guard status == errSecSuccess else {
             throw KeyChainStoreError.unexpectedStatus(status)
@@ -78,6 +85,12 @@ public final class SystemKeyChainStore: KeyChainStoreProtocol {
 
         var result: AnyObject?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
+
+        #if DEBUG
+        if status == errSecMissingEntitlement {
+            print("Keychain error: Missing entitlements (-34018) on read. If this is a SwiftPM test, use a host app test target or assert this failure intentionally.")
+        }
+        #endif
 
         switch status {
         case errSecSuccess:
@@ -105,6 +118,12 @@ public final class SystemKeyChainStore: KeyChainStoreProtocol {
         ]
 
         let status = SecItemDelete(query as CFDictionary)
+
+        #if DEBUG
+        if status == errSecMissingEntitlement {
+            print("Keychain error: Missing entitlements (-34018) on delete. If this is a SwiftPM test, use a host app test target or assert this failure intentionally.")
+        }
+        #endif
 
         // Deleting a non-existent key is not an error
         guard status == errSecSuccess || status == errSecItemNotFound else {
