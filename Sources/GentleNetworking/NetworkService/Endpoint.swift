@@ -45,4 +45,11 @@ public struct Endpoint: EndpointProtocol {
     public var query: [URLQueryItem]?
     public var body: [String: Any]?
     public var requiresAuth: Bool
+    public init(path: String, method: HTTPMethod, query: [URLQueryItem]? = nil, body: [String : Any]? = nil, requiresAuth: Bool = false) {
+        self.path = path
+        self.method = method
+        self.query = query
+        self.body = body
+        self.requiresAuth = requiresAuth
+    }
 }
