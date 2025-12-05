@@ -35,7 +35,7 @@ public extension AuthServiceProtocol {
     }
 }
 
-public struct DefaultAuthService: AuthServiceProtocol {
+public struct SystemKeyChainAuthService: AuthServiceProtocol {
     public let keyChainStore: any KeyChainStoreProtocol = SystemKeyChainStore()
     public init() {
     }

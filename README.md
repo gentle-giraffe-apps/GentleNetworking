@@ -4,18 +4,13 @@
 designed for modern iOS apps using `async/await`, clean architecture,
 and testable abstractions.
 
-It was extracted from real production app code and packaged as a
-standalone Swift Package for reuse across projects.
-
 ---
 
 ## ✨ Features
 
 - ✅ Native `async/await` API
 - ✅ Protocol-based, fully mockable networking layer
-- ✅ Pluggable `NetworkEnvironment`
 - ✅ Typed request / response decoding
-- ✅ Centralized error handling
 - ✅ Swift 6 + Swift Concurrency friendly
 - ✅ Designed for MVVM / Clean Architecture
 - ✅ Zero third-party dependencies
@@ -52,7 +47,8 @@ import GentleNetworking
 ### 2. Create a Network Service
 
 ``` swift
-    let networkService = HTTPNetworkService(authService: DefaultAuthService())
+    let keyChainAuthService = SystemKeyChainAuthService()
+	let networkService = HTTPNetworkService(authService: keyChainAuthService)
 ```
 
 ---
@@ -75,7 +71,7 @@ import GentleNetworking
         via: apiEnvironment
     )
 
-    try serviceDependencies.authService.saveAccessToken(
+    try keyChainAuthService.saveAccessToken(
         authTokenModel.token
     )
 ```
