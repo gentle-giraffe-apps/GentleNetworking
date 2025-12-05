@@ -11,3 +11,10 @@ public extension APIEnvironmentProtocol {
         return url
     }
 }
+
+public struct DefaultAPIEnvironment: APIEnvironmentProtocol, Equatable {
+    public let _baseURL: URL?
+    public init(baseURL: URL? = nil) {
+        self._baseURL = baseURL
+    }
+}
