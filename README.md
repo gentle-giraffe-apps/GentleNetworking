@@ -35,6 +35,36 @@ and testable abstractions.
 
 ---
 
+## Architecture
+
+GentleNetworking is centered around a single, protocol-driven `HTTPNetworkService` that coordinates requests using injected endpoint, environment, and authentication abstractions.
+
+
+
+```mermaid
+flowchart TB
+    HTTP["HTTPNetworkService<br/>- request(... )<br/>- requestModels(... )"]
+
+    Endpoint["EndpointProtocol"]
+    Env["APIEnvironmentProtocol"]
+    Auth["AuthServiceProtocol"]
+
+    HTTP --> Endpoint
+    HTTP --> Env
+    HTTP -->|injected| Auth
+```
+
+### Endpoint
+
+```mermaid
+flowchart TB
+    APIEndpoint["APIEndpoint<br/>enum<br/><br/>case endpoint1<br/>…<br/>endpointN"]
+
+    EndpointProtocol["EndpointProtocol<br/><br/>- path<br/>- method<br/>- query<br/>- body<br/>- requiresAuth"]
+
+    APIEndpoint -->|conforms to| EndpointProtocol
+```
+
 ## 🚀 Basic Usage
 
 ### 1. Define an API and Endpoints
@@ -75,7 +105,7 @@ import GentleNetworking
             }
         }
 
-        var body: [String : Any]? {
+        var body: [String: Any]? {
             switch self {
             case .signIn(let username, let password): [ "username": username, "password": password ]
             case .model, .models: nil
