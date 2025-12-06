@@ -43,7 +43,7 @@ GentleNetworking is centered around a single, protocol-driven `HTTPNetworkServic
 
 ```mermaid
 flowchart TB
-    HTTP["HTTPNetworkService<br/>- request(... )<br/>- requestModels(... )"]
+    HTTP["HTTPNetworkService<br/><br/>- request(...)"]
 
     Endpoint["EndpointProtocol"]
     Env["APIEnvironmentProtocol"]
@@ -52,13 +52,20 @@ flowchart TB
     HTTP --> Endpoint
     HTTP --> Env
     HTTP -->|injected| Auth
+
+    %% --- invisible bottom padding ---
+    Pad1["."]
+    Pad2["."]
+
+    style Pad1 fill:transparent,stroke:transparent,color:transparent
+    style Pad2 fill:transparent,stroke:transparent,color:transparent
 ```
 
 ### Endpoint
 
 ```mermaid
 flowchart TB
-    APIEndpoint["APIEndpoint<br/>enum<br/><br/>case endpoint1<br/>…<br/>endpointN"]
+    APIEndpoint["APIEndpoint enum<br/><br/>case endpoint1<br/>…<br/>endpointN"]
 
     EndpointProtocol["EndpointProtocol<br/><br/>- path<br/>- method<br/>- query<br/>- body<br/>- requiresAuth"]
 
