@@ -1,16 +1,18 @@
-//  Jonathan Ritchey
+//  Jonathan Ritchey
 
 import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            Tab("Simple", systemImage: "1.circle") {
+                SimpleExampleView()
+            }
+
+            Tab("Advanced", systemImage: "2.circle") {
+                AdvancedExampleView()
+            }
         }
-        .padding()
     }
 }
 
