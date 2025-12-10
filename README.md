@@ -23,6 +23,26 @@ and testable abstractions.
 
 ---
 
+## Demo App
+
+A runnable SwiftUI demo app is included in this repository using a local package reference.
+
+### How to Run
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/<your-org>/GentleNetworking.git
+   ```
+2. Open the demo project:
+   ```
+   Demo/GentleNetworkingDemo/GentleNetworkingDemo.xcodeproj
+   ```
+3. Select an iOS 17+ simulator.
+4. Build & Run (⌘R).
+
+The project is preconfigured with a local Swift Package reference to `GentleNetworking` and should run without any additional setup.
+
+---
+
 ## 📦 Installation (Swift Package Manager)
 
 ### Via Xcode
@@ -127,7 +147,7 @@ import GentleNetworking
 ### 2. Create a Network Service
 
 ``` swift
-	let networkService = HTTPNetworkService(authService: keyChainAuthService)
+	let networkService = HTTPNetworkService()
 ```
 
 ---
