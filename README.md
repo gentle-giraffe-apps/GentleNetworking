@@ -30,7 +30,7 @@ A runnable SwiftUI demo app is included in this repository using a local package
 ### How to Run
 1. Clone the repository:
    ```bash
-   git clone https://github.com/<your-org>/GentleNetworking.git
+   git clone https://github.com/gentle-giraffe-apps/GentleNetworking.git
    ```
 2. Open the demo project:
    ```
