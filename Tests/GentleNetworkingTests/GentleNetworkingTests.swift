@@ -778,10 +778,13 @@ struct HTTPNetworkServiceTests {
     let testEnvironment = DefaultAPIEnvironment(baseURL: URL(string: "https://api.test.com"))
     let testEndpoint = Endpoint(path: "/users", method: .get)
 
-    func makeTestSession() -> URLSession {
+    func makeTestTransport() -> HTTPTransportProtocol {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [MockURLProtocol.self]
-        return URLSession(configuration: config)
+        let transport = URLSessionTransport(
+            session: URLSession(configuration: config)
+        )
+        return transport
     }
 
     @Test("request decodes response")
@@ -798,9 +801,9 @@ struct HTTPNetworkServiceTests {
             )!
             return (response, Data(json.utf8))
         }
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService()
         )
         let user: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
@@ -823,9 +826,8 @@ struct HTTPNetworkServiceTests {
             )!
             return (response, Data(json.utf8))
         }
-        let session = makeTestSession()
         let service = HTTPNetworkService(
-            session: session,
+            transport: makeTestTransport(),
             authService: MockAuthService()
         )
         let users: [TestUser] = try await service.requestModels(to: testEndpoint, via: testEnvironment)
@@ -845,9 +847,8 @@ struct HTTPNetworkServiceTests {
             )!
             return (response, Data())
         }
-        let session = makeTestSession()
         let service = HTTPNetworkService(
-            session: session,
+            transport: makeTestTransport(),
             authService: MockAuthService()
         )
         let result = try await service.requestVoid(to: testEndpoint, via: testEnvironment)
@@ -868,9 +869,8 @@ struct HTTPNetworkServiceTests {
             )!
             return (response, Data())
         }
-        let session = makeTestSession()
         let service = HTTPNetworkService(
-            session: session,
+            transport: makeTestTransport(),
             authService: MockAuthService()
         )
         let result = try await service.requestVoid(to: testEndpoint, via: testEnvironment)
@@ -891,9 +891,9 @@ struct HTTPNetworkServiceTests {
             )!
             return (response, Data())
         }
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService()
         )
         do {
@@ -921,9 +921,9 @@ struct HTTPNetworkServiceTests {
             )!
             return (response, Data())
         }
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService()
         )
         do {
@@ -950,9 +950,9 @@ struct HTTPNetworkServiceTests {
             return (response, Data())
         }
         let handler = MockTokenInvalidationHandler()
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService(),
             invalidationHandler: handler
         )
@@ -983,9 +983,9 @@ struct HTTPNetworkServiceTests {
         }
         let store = MockKeyChainStore()
         try store.save("test-bearer-token", forKey: "accessToken")
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService(keyChainStore: store)
         )
         let authEndpoint = Endpoint(path: "/protected", method: .get, requiresAuth: true)
@@ -1011,9 +1011,9 @@ struct HTTPNetworkServiceTests {
         }
         let store = MockKeyChainStore()
         try store.save("token", forKey: "accessToken")
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService(keyChainStore: store)
         )
         let publicEndpoint = Endpoint(path: "/public", method: .get, requiresAuth: false)
@@ -1043,9 +1043,9 @@ struct HTTPNetworkServiceTests {
         }
         let customDecoder = JSONDecoder()
         customDecoder.dateDecodingStrategy = DateDecodingStrategies.iso8601FractionalAndNonFractionalSeconds
-        let session = makeTestSession()
+        let transport = makeTestTransport()
         let service = HTTPNetworkService(
-            session: session,
+            transport: transport,
             authService: MockAuthService(),
             jsonDecoder: customDecoder
         )
