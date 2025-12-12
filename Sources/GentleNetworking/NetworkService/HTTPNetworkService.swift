@@ -2,18 +2,18 @@
 import Foundation
 
 public struct HTTPNetworkService: NetworkServiceProtocol {
-    let session: URLSession
+    let transport: HTTPTransportProtocol
     let authService: AuthServiceProtocol
     let invalidationHandler: TokenInvalidationHandler?
     let jsonDecoder: JSONDecoder
     
     public init(
-        session: URLSession = .shared,
+        transport: HTTPTransportProtocol = URLSessionTransport(session: .shared),
         authService: AuthServiceProtocol = SystemKeyChainAuthService(),
         invalidationHandler: TokenInvalidationHandler? = nil,
         jsonDecoder: JSONDecoder? = nil
     ) {
-        self.session = session
+        self.transport = transport
         self.authService = authService
         self.invalidationHandler = invalidationHandler
         self.jsonDecoder = jsonDecoder ?? Self.makeDefaultDecoder()
@@ -54,7 +54,7 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
         if endpoint.requiresAuth {
             request = try authService.authorize(request)
         }
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await transport.data(for: request)
         // ✅ DEBUG: print raw text if possible
         print("➡️ \(request.httpMethod ?? "") \(request.url?.absoluteString ?? "")")
         if let text = String(data: data, encoding: .utf8) {
@@ -62,14 +62,11 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
         } else {
             print("🔍 Response Data (non-UTF8, \(data.count) bytes)")
         }
-        guard let http = response as? HTTPURLResponse else {
-            throw NetworkError.invalidStatusCode((response as? HTTPURLResponse)?.statusCode)
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            if http.statusCode == 401 {
+        guard (200..<300).contains(response.statusCode) else {
+            if response.statusCode == 401 {
                 await invalidationHandler?.handleInvalidToken()
             }
-            throw NetworkError.invalidStatusCode((response as? HTTPURLResponse)?.statusCode)
+            throw NetworkError.invalidStatusCode(response.statusCode)
         }
         return (data, response)
     }
