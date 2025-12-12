@@ -619,7 +619,7 @@ struct MockNetworkServiceTests {
         let json = """
         {"id": 1, "name": "John Doe", "email": "john@example.com"}
         """
-        let service = MockNetworkService(responseJSON: json, delayInMilliseconds: 0)
+        let service = MockNetworkService(responseJSON: json)
         let user: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
         #expect(user.id == 1)
         #expect(user.name == "John Doe")
@@ -634,7 +634,7 @@ struct MockNetworkServiceTests {
             {"id": 2, "name": "Bob", "email": "bob@example.com"}
         ]
         """
-        let service = MockNetworkService(responseJSON: json, delayInMilliseconds: 0)
+        let service = MockNetworkService(responseJSON: json)
         let users: [TestUser] = try await service.requestModels(to: testEndpoint, via: testEnvironment)
         #expect(users.count == 2)
         #expect(users[0].name == "Alice")
@@ -643,7 +643,7 @@ struct MockNetworkServiceTests {
 
     @Test("requestVoid returns success")
     func requestVoidReturnsSuccess() async throws {
-        let service = MockNetworkService(responseJSON: "", delayInMilliseconds: 0)
+        let service = MockNetworkService(responseJSON: "")
         let result = try await service.requestVoid(to: testEndpoint, via: testEnvironment)
         switch result {
         case .success(let code):
@@ -656,7 +656,10 @@ struct MockNetworkServiceTests {
         let json = """
         {"id": 1, "name": "Test", "email": "test@test.com"}
         """
-        let service = MockNetworkService(responseJSON: json, delayInMilliseconds: 100)
+        let service = MockNetworkService(
+            responseJSON: json,
+            duration: Duration.milliseconds(100)
+        )
         let start = ContinuousClock.now
         let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
         let elapsed = ContinuousClock.now - start
@@ -666,7 +669,7 @@ struct MockNetworkServiceTests {
     @Test("throws decoding error")
     func throwsDecodingError() async {
         let invalidJSON = "not valid json"
-        let service = MockNetworkService(responseJSON: invalidJSON, delayInMilliseconds: 0)
+        let service = MockNetworkService(responseJSON: invalidJSON)
         do {
             let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
             Issue.record("Should have thrown")
@@ -680,7 +683,12 @@ struct MockNetworkServiceTests {
         let json = """
         {"id": 1, "name": "Dated", "createdAt": "2024-03-15T08:00:00.500Z"}
         """
-        let service = MockNetworkService(responseJSON: json, delayInMilliseconds: 0)
+        let customDecoder = JSONDecoder()
+        customDecoder.dateDecodingStrategy = DateDecodingStrategies.iso8601FractionalAndNonFractionalSeconds
+        let service = MockNetworkService(
+            responseJSON: json,
+            jsonDecoder: customDecoder
+        )
         let user: TestUserWithDate = try await service.request(to: testEndpoint, via: testEnvironment)
         #expect(user.id == 1)
     }
