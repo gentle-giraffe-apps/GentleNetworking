@@ -1,12 +1,12 @@
 //  Jonathan Ritchey
 import Foundation
 
-public enum CannedResponseError: Error, Sendable {
-    case missingRequestURL
-    case failedToCreateHTTPURLResponse
-}
-
 public struct CannedResponse: Sendable {
+    
+    public enum Error: Swift.Error, Sendable {
+        case failedToCreateHTTPURLResponse
+    }
+    
     public let data: Data
     public let statusCode: Int
     public let httpVersion: String?
@@ -45,13 +45,18 @@ public struct CannedResponse: Sendable {
     
     public func makeResponse(url: URL) throws -> HTTPURLResponse {
         guard let urlResponse = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: httpVersion, headerFields: headerFields) else {
-            throw CannedResponseError.failedToCreateHTTPURLResponse
+            throw Error.failedToCreateHTTPURLResponse
         }
         return urlResponse
     }
 }
 
 public struct CannedResponseTransport: HTTPTransportProtocol {
+    
+    public enum Error: Swift.Error, Sendable {
+        case missingRequestURL
+    }
+    
     public let cannedResponse: CannedResponse
 
     public init(cannedResponse: CannedResponse) {
@@ -76,7 +81,7 @@ public struct CannedResponseTransport: HTTPTransportProtocol {
     
     public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         guard let url = request.url else {
-            throw CannedResponseError.missingRequestURL
+            throw Error.missingRequestURL
         }
         let response = try cannedResponse.makeResponse(url: url)
         return (cannedResponse.data, response)
