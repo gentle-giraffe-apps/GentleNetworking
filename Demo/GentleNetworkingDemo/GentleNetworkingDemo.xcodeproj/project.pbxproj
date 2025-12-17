@@ -18,19 +18,11 @@
 			remoteGlobalIDString = 88A59A442EE75FF80071B0B6;
 			remoteInfo = GentleNetworkingDemo;
 		};
-		88A59A5D2EE75FF90071B0B6 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 88A59A3D2EE75FF80071B0B6 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 88A59A442EE75FF80071B0B6;
-			remoteInfo = GentleNetworkingDemo;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		88A59A452EE75FF80071B0B6 /* GentleNetworkingDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GentleNetworkingDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		88A59A522EE75FF90071B0B6 /* GentleNetworkingDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GentleNetworkingDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		88A59A5C2EE75FF90071B0B6 /* GentleNetworkingDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GentleNetworkingDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -67,13 +59,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		88A59A592EE75FF90071B0B6 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -92,7 +77,6 @@
 			children = (
 				88A59A452EE75FF80071B0B6 /* GentleNetworkingDemo.app */,
 				88A59A522EE75FF90071B0B6 /* GentleNetworkingDemoTests.xctest */,
-				88A59A5C2EE75FF90071B0B6 /* GentleNetworkingDemoUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -146,29 +130,6 @@
 			productReference = 88A59A522EE75FF90071B0B6 /* GentleNetworkingDemoTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		88A59A5B2EE75FF90071B0B6 /* GentleNetworkingDemoUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 88A59A6C2EE75FF90071B0B6 /* Build configuration list for PBXNativeTarget "GentleNetworkingDemoUITests" */;
-			buildPhases = (
-				88A59A582EE75FF90071B0B6 /* Sources */,
-				88A59A592EE75FF90071B0B6 /* Frameworks */,
-				88A59A5A2EE75FF90071B0B6 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				88A59A5E2EE75FF90071B0B6 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				88A59A5F2EE75FF90071B0B6 /* GentleNetworkingDemoUITests */,
-			);
-			name = GentleNetworkingDemoUITests;
-			packageProductDependencies = (
-			);
-			productName = GentleNetworkingDemoUITests;
-			productReference = 88A59A5C2EE75FF90071B0B6 /* GentleNetworkingDemoUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -183,10 +144,6 @@
 						CreatedOnToolsVersion = 26.1;
 					};
 					88A59A512EE75FF90071B0B6 = {
-						CreatedOnToolsVersion = 26.1;
-						TestTargetID = 88A59A442EE75FF80071B0B6;
-					};
-					88A59A5B2EE75FF90071B0B6 = {
 						CreatedOnToolsVersion = 26.1;
 						TestTargetID = 88A59A442EE75FF80071B0B6;
 					};
@@ -211,7 +168,6 @@
 			targets = (
 				88A59A442EE75FF80071B0B6 /* GentleNetworkingDemo */,
 				88A59A512EE75FF90071B0B6 /* GentleNetworkingDemoTests */,
-				88A59A5B2EE75FF90071B0B6 /* GentleNetworkingDemoUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -225,13 +181,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		88A59A502EE75FF90071B0B6 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		88A59A5A2EE75FF90071B0B6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -255,13 +204,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		88A59A582EE75FF90071B0B6 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -269,11 +211,6 @@
 			isa = PBXTargetDependency;
 			target = 88A59A442EE75FF80071B0B6 /* GentleNetworkingDemo */;
 			targetProxy = 88A59A532EE75FF90071B0B6 /* PBXContainerItemProxy */;
-		};
-		88A59A5E2EE75FF90071B0B6 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 88A59A442EE75FF80071B0B6 /* GentleNetworkingDemo */;
-			targetProxy = 88A59A5D2EE75FF90071B0B6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -509,46 +446,6 @@
 			};
 			name = Release;
 		};
-		88A59A6D2EE75FF90071B0B6 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = HGE6ZKLW3Q;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jr.GentleNetworkingDemoUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = GentleNetworkingDemo;
-			};
-			name = Debug;
-		};
-		88A59A6E2EE75FF90071B0B6 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = HGE6ZKLW3Q;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.jr.GentleNetworkingDemoUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = GentleNetworkingDemo;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -575,15 +472,6 @@
 			buildConfigurations = (
 				88A59A6A2EE75FF90071B0B6 /* Debug */,
 				88A59A6B2EE75FF90071B0B6 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		88A59A6C2EE75FF90071B0B6 /* Build configuration list for PBXNativeTarget "GentleNetworkingDemoUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				88A59A6D2EE75FF90071B0B6 /* Debug */,
-				88A59A6E2EE75FF90071B0B6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

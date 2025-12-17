@@ -28,7 +28,11 @@ public protocol EndpointProtocol: Sendable {
 }
 
 public extension EndpointProtocol {
-    func from(_ baseURL: URL) throws -> URLRequest {
+    
+    func from(
+        _ baseURL: URL,
+        jsonEncoder: JSONEncoder = JSONEncoder()
+    ) throws -> URLRequest {
         var url = baseURL.appendingPathComponent(path)
 
         if let query, !query.isEmpty {
@@ -39,15 +43,14 @@ public extension EndpointProtocol {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        
+
         if let body {
-            let encoder = JSONEncoder()
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             do {
-                request.httpBody = try encoder.encode(body)
+                request.httpBody = try jsonEncoder.encode(body)
             } catch {
-                print("\(error)")
-                print("stop")
+                // ✅ DEBUG
+                print("➡️ endpoint body encoding: \(path) error: \(error)")
                 throw error
             }
         }
@@ -56,6 +59,7 @@ public extension EndpointProtocol {
 }
 
 public struct Endpoint: EndpointProtocol {
+    public let jsonEncoder: JSONEncoder
     public let path: String
     public let method: HTTPMethod
     public var query: [URLQueryItem]?
@@ -67,5 +71,6 @@ public struct Endpoint: EndpointProtocol {
         self.query = query
         self.body = body
         self.requiresAuth = requiresAuth
+        self.jsonEncoder = JSONEncoder()
     }
 }
