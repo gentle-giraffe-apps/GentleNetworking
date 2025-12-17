@@ -7,7 +7,7 @@ public enum NetworkServiceEmptyResponseResult {
     case success(code: Int)
 }
 
-public protocol NetworkServiceProtocol {
+public protocol NetworkServiceProtocol: Sendable {
     func request<Model: Decodable>(
         to endpoint: EndpointProtocol,
         via environment: APIEnvironmentProtocol

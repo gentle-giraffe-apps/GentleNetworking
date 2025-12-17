@@ -20,6 +20,7 @@ and testable abstractions.
 - ✅ Swift 6 + Swift Concurrency friendly
 - ✅ Designed for MVVM / Clean Architecture
 - ✅ Zero third-party dependencies
+- ✅ Built-in canned response transports for testing
 
 ---
 
@@ -125,9 +126,12 @@ import GentleNetworking
             }
         }
 
-        var body: [String: Any]? {
+        var body: [String: EndpointAnyEncodable]? {
             switch self {
-            case .signIn(let username, let password): [ "username": username, "password": password ]
+            case .signIn(let username, let password): [
+                "username": EndpointAnyEncodable(username),
+                "password": EndpointAnyEncodable(password)
+            ]
             case .model, .models: nil
             }
         }
@@ -194,6 +198,44 @@ import GentleNetworking
         to: .models, 
         via: apiEnvironment
     )
+```
+
+---
+
+## 🧪 Testing
+
+GentleNetworking provides a transport-layer abstraction for easy mocking in tests.
+
+### CannedResponseTransport
+
+Returns a fixed response for any request:
+
+``` swift
+let transport = CannedResponseTransport(
+    string: #"{"id": 1, "title": "Test"}"#,
+    statusCode: 200
+)
+
+let networkService = HTTPNetworkService(transport: transport)
+```
+
+### CannedRoutesTransport
+
+Match requests by method and path pattern for more realistic test scenarios:
+
+``` swift
+let transport = CannedRoutesTransport(routes: [
+    CannedRoute(
+        pattern: RequestPattern(method: .get, path: "/api/models"),
+        response: CannedResponse(string: #"[{"id": 1}]"#)
+    ),
+    CannedRoute(
+        pattern: RequestPattern(method: .post, pathRegex: "^/api/model/\\d+$"),
+        response: CannedResponse(string: #"{"success": true}"#)
+    )
+])
+
+let networkService = HTTPNetworkService(transport: transport)
 ```
 
 ---

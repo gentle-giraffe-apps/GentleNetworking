@@ -3,11 +3,17 @@
 
 import PackageDescription
 
+let strictSwift6: [SwiftSetting] = [
+    .unsafeFlags(["-strict-concurrency=complete"]),
+    .unsafeFlags(["-warn-concurrency"]),
+    .unsafeFlags(["-enable-actor-data-race-checks"], .when(configuration: .debug)),
+    .unsafeFlags(["-warnings-as-errors"])
+]
+
 let package = Package(
     name: "GentleNetworking",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14)
+        .iOS(.v17)
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -20,11 +26,14 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "GentleNetworking"
+            name: "GentleNetworking",
+            swiftSettings: strictSwift6
         ),
         .testTarget(
             name: "GentleNetworkingTests",
-            dependencies: ["GentleNetworking"]
+            dependencies: ["GentleNetworking"],
+            swiftSettings: strictSwift6
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )

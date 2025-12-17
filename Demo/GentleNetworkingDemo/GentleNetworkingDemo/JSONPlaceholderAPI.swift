@@ -38,7 +38,7 @@ enum JSONPlaceholderEndpoint {
 
 extension JSONPlaceholderEndpoint: EndpointProtocol {
 
-    var path: String {
+    nonisolated var path: String {
         switch self {
         case .posts, .createPost:
             "/posts"
@@ -59,7 +59,7 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    var method: HTTPMethod {
+    nonisolated var method: HTTPMethod {
         switch self {
         case .posts, .post, .users, .user, .comments, .commentsForPost, .todos, .todosForUser:
             .get
@@ -72,7 +72,7 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    var query: [URLQueryItem]? {
+    nonisolated var query: [URLQueryItem]? {
         switch self {
         case .commentsForPost(let postId):
             [URLQueryItem(name: "postId", value: String(postId))]
@@ -83,18 +83,26 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    var body: [String: Any]? {
+    nonisolated var body: [String: EndpointAnyEncodable]? {
         switch self {
         case .createPost(let title, let body, let userId):
-            ["title": title, "body": body, "userId": userId]
+            [
+                "title": EndpointAnyEncodable(title),
+                "body": EndpointAnyEncodable(body),
+                "userId": EndpointAnyEncodable(userId)
+            ]
         case .updatePost(_, let title, let body, let userId):
-            ["title": title, "body": body, "userId": userId]
+            [
+                "title": EndpointAnyEncodable(title),
+                "body": EndpointAnyEncodable(body),
+                "userId": EndpointAnyEncodable(userId)
+            ]
         default:
             nil
         }
     }
 
-    var requiresAuth: Bool {
+    nonisolated var requiresAuth: Bool {
         // JSONPlaceholder doesn't require auth, but in a real app you'd
         // return true for endpoints that need authentication
         false

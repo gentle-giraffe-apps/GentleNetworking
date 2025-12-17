@@ -3,24 +3,24 @@
 import Foundation
 import Security
 
-public protocol KeyChainStoreProtocol {
-    func save(_ value: String, forKey key: String) throws
-    func value(forKey key: String) throws -> String?
-    func deleteValue(forKey key: String) throws
+public protocol KeyChainStoreProtocol: Sendable {
+    func save(_ value: String, forKey key: String) async throws
+    func value(forKey key: String) async throws -> String?
+    func deleteValue(forKey key: String) async throws
 }
 
-public final class MockKeyChainStore: KeyChainStoreProtocol {
+public actor MockKeyChainStore: KeyChainStoreProtocol {
     var storage: [String: String] = [:]
 
-    public func save(_ value: String, forKey key: String) throws {
+    public func save(_ value: String, forKey key: String) async throws {
         storage[key] = value
     }
 
-    public func value(forKey key: String) throws -> String? {
+    public func value(forKey key: String) async throws -> String? {
         storage[key]
     }
 
-    public func deleteValue(forKey key: String) throws {
+    public func deleteValue(forKey key: String) async throws {
         storage[key] = nil
     }
 }
@@ -42,7 +42,7 @@ public final class SystemKeyChainStore: KeyChainStoreProtocol {
 
     // MARK: - KeyChainStoreProtocol
 
-    public func save(_ value: String, forKey key: String) throws {
+    public func save(_ value: String, forKey key: String) async throws {
         guard let data = value.data(using: .utf8) else {
             throw KeyChainStoreError.stringEncodingFailed
         }
@@ -74,7 +74,7 @@ public final class SystemKeyChainStore: KeyChainStoreProtocol {
         }
     }
 
-    public func value(forKey key: String) throws -> String? {
+    public func value(forKey key: String) async throws -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -110,7 +110,7 @@ public final class SystemKeyChainStore: KeyChainStoreProtocol {
         }
     }
 
-    public func deleteValue(forKey key: String) throws {
+    public func deleteValue(forKey key: String) async throws {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
