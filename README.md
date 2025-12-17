@@ -6,7 +6,7 @@ and testable abstractions.
 
 [![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
 [![SPM Compatible](https://img.shields.io/badge/SPM-Compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![Platforms](https://img.shields.io/badge/platforms-iOS%2017%2B%20%7C%20macOS%2014%2B-blue)](https://developer.apple.com/)
+[![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)](https://developer.apple.com/ios/)
 [![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -97,13 +97,10 @@ import GentleNetworking
         baseURL: URL(string: "https://api.company.com")
     )
 
-    enum APIEndpoint {
+    nonisolated enum APIEndpoint: EndpointProtocol {
         case signIn(username: String, password: String)
         case model(id: Int)
         case models
-    }
-
-    extension APIEndpoint: EndpointProtocol {
     
         var path: String {
             switch self {

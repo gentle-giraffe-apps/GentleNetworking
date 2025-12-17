@@ -15,7 +15,7 @@ let jsonPlaceholderEnvironment = DefaultAPIEnvironment(
 /// Type-safe API endpoints for JSONPlaceholder
 /// This demonstrates the recommended pattern for defining API endpoints
 /// using an enum that conforms to EndpointProtocol.
-enum JSONPlaceholderEndpoint {
+nonisolated enum JSONPlaceholderEndpoint: EndpointProtocol {
     // Posts
     case posts
     case post(id: Int)
@@ -34,11 +34,8 @@ enum JSONPlaceholderEndpoint {
     // Todos
     case todos
     case todosForUser(userId: Int)
-}
-
-extension JSONPlaceholderEndpoint: EndpointProtocol {
-
-    nonisolated var path: String {
+    
+    var path: String {
         switch self {
         case .posts, .createPost:
             "/posts"
@@ -59,7 +56,7 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    nonisolated var method: HTTPMethod {
+    var method: HTTPMethod {
         switch self {
         case .posts, .post, .users, .user, .comments, .commentsForPost, .todos, .todosForUser:
             .get
@@ -72,7 +69,7 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    nonisolated var query: [URLQueryItem]? {
+    var query: [URLQueryItem]? {
         switch self {
         case .commentsForPost(let postId):
             [URLQueryItem(name: "postId", value: String(postId))]
@@ -83,7 +80,7 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    nonisolated var body: [String: EndpointAnyEncodable]? {
+    var body: [String: EndpointAnyEncodable]? {
         switch self {
         case .createPost(let title, let body, let userId):
             [
@@ -102,7 +99,7 @@ extension JSONPlaceholderEndpoint: EndpointProtocol {
         }
     }
 
-    nonisolated var requiresAuth: Bool {
+    var requiresAuth: Bool {
         // JSONPlaceholder doesn't require auth, but in a real app you'd
         // return true for endpoints that need authentication
         false
