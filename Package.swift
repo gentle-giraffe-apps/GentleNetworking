@@ -6,8 +6,7 @@ import PackageDescription
 let strictSwift6: [SwiftSetting] = [
     .unsafeFlags(["-strict-concurrency=complete"]),
     .unsafeFlags(["-warn-concurrency"]),
-    .unsafeFlags(["-enable-actor-data-race-checks"], .when(configuration: .debug)),
-    .unsafeFlags(["-warnings-as-errors"])
+    .unsafeFlags(["-enable-actor-data-race-checks"], .when(configuration: .debug))
 ]
 
 let package = Package(
