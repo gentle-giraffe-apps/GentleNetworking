@@ -50,9 +50,9 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
         from endpoint: EndpointProtocol,
         via environment: APIEnvironmentProtocol
     ) async throws -> (Data, URLResponse) {
-        var request = endpoint.from(environment.baseURL)
+        var request = try endpoint.from(environment.baseURL)
         if endpoint.requiresAuth {
-            request = try authService.authorize(request)
+            request = try await authService.authorize(request)
         }
         let (data, response) = try await transport.data(for: request)
         // ✅ DEBUG: print raw text if possible
