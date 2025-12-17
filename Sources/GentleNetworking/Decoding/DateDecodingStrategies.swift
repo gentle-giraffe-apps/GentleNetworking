@@ -27,3 +27,18 @@ public struct DateDecodingStrategies {
     }
 }
 
+public struct DateEncodingStrategies {
+
+    /// Encodes dates as ISO-8601 with fractional seconds.
+    /// Example:
+    /// - 2024-01-01T12:34:56.789Z
+    public static let iso8601FractionalSeconds: JSONEncoder.DateEncodingStrategy = .custom { date, encoder in
+        var container = encoder.singleValueContainer()
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let string = formatter.string(from: date)
+        try container.encode(string)
+    }
+}

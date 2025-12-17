@@ -6,17 +6,20 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
     let authService: AuthServiceProtocol
     let invalidationHandler: TokenInvalidationHandler?
     let jsonDecoder: JSONDecoder
+    let jsonEncoder: JSONEncoder
     
     public init(
         transport: HTTPTransportProtocol = URLSessionTransport(session: .shared),
         authService: AuthServiceProtocol = SystemKeyChainAuthService(),
         invalidationHandler: TokenInvalidationHandler? = nil,
-        jsonDecoder: JSONDecoder? = nil
+        jsonDecoder: JSONDecoder? = nil,
+        jsonEncoder: JSONEncoder? = nil
     ) {
         self.transport = transport
         self.authService = authService
         self.invalidationHandler = invalidationHandler
-        self.jsonDecoder = jsonDecoder ?? Self.makeDefaultDecoder()
+        self.jsonDecoder = jsonDecoder ?? JSONDecoder()
+        self.jsonEncoder = jsonEncoder ?? JSONEncoder()
     }
     
     public func request<Model: Decodable>(
@@ -50,7 +53,7 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
         from endpoint: EndpointProtocol,
         via environment: APIEnvironmentProtocol
     ) async throws -> (Data, URLResponse) {
-        var request = try endpoint.from(environment.baseURL)
+        var request = try endpoint.from(environment.baseURL, jsonEncoder: jsonEncoder)
         if endpoint.requiresAuth {
             request = try await authService.authorize(request)
         }
@@ -69,11 +72,5 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
             throw NetworkError.invalidStatusCode(response.statusCode)
         }
         return (data, response)
-    }
-    
-    private static func makeDefaultDecoder() -> JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = DateDecodingStrategies.iso8601FractionalAndNonFractionalSeconds
-        return decoder
     }
 }
