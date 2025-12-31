@@ -4,7 +4,7 @@
 designed for modern iOS apps using `async/await`, clean architecture,
 and testable abstractions.
 
-[![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/demo-fastlane-build.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/demo-fastlane-build.yml?query=branch%3Amain)
+[![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml?query=branch%3Amain)
 [![Swift](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
 [![SPM Compatible](https://img.shields.io/badge/SPM-Compatible-brightgreen.svg)](https://swift.org/package-manager/)
 [![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)](https://developer.apple.com/ios/)
@@ -257,9 +257,6 @@ networking behavior.
 ## 📱 Platform Support
 
 - iOS 17+
-- macOS 14+
-
-Additional platforms can be added easily if needed.
 
 ---
 

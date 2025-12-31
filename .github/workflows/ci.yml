@@ -1,4 +1,4 @@
-name: Demo (Fastlane Build)
+name: CI
 
 on:
   push:
