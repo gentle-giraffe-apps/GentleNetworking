@@ -1,0 +1,29 @@
+name: Demo (Fastlane Build)
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  ios-demo-build:
+    runs-on: macos-15
+
+    defaults:
+      run:
+        working-directory: Demo/GentleNetworkingDemo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby (Bundler)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: Demo/GentleNetworkingDemo
+
+      - name: Build (Fastlane)
+        run: bundle exec fastlane ios build
+
