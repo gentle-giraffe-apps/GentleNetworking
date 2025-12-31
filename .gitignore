@@ -2,6 +2,20 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
+# Fastlane artifacts (anywhere in repo)
+**/fastlane/report.xml
+**/fastlane/Preview.html
+**/fastlane/screenshots/
+**/fastlane/test_output/
+**/fastlane/logs/
+
+# Bundler artifacts
+**/.bundle/
+**/vendor/bundle/
+
+# Derived data (just in case)
+**/DerivedData/
+
 ## DSStore (mac finder autogenerate files)
 .DS_Store
 **/.DS_Store
