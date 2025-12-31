@@ -4,7 +4,8 @@
 designed for modern iOS apps using `async/await`, clean architecture,
 and testable abstractions.
 
-[![Swift](https://img.shields.io/badge/Swift-6.2-orange.svg)](https://swift.org)
+[![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/demo-fastlane-build.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/demo-fastlane-build.yml?query=branch%3Amain)
+[![Swift](https://img.shields.io/badge/Swift-6.1-orange.svg)](https://swift.org)
 [![SPM Compatible](https://img.shields.io/badge/SPM-Compatible-brightgreen.svg)](https://swift.org/package-manager/)
 [![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)](https://developer.apple.com/ios/)
 [![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen.svg)](#)
