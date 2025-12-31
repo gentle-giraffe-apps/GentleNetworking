@@ -1,4 +1,6 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.1
+// NOTE: GitHub Actions macOS runners currently ship SwiftPM 6.1.
+// Bump back to 6.2 when runner images include Xcode 26.2+.
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
