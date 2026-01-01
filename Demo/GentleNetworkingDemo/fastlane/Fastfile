@@ -26,4 +26,21 @@ platform :ios do
       destination: "generic/platform=iOS Simulator"
     )
   end
+
+lane :package_tests do
+    repo_root = File.expand_path("../../..", __dir__) # fastlane → repo root
+
+    Dir.chdir(repo_root) do
+      sh <<~CMD
+        set -euo pipefail
+        rm -rf TestResults.xcresult
+        xcodebuild test \
+          -scheme GentleNetworking \
+          -sdk iphonesimulator \
+          -destination "platform=iOS Simulator,name=iPhone 17" \
+          -enableCodeCoverage YES \
+          -resultBundlePath TestResults.xcresult
+      CMD
+    end
+  end
 end
