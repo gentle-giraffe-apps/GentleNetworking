@@ -9,6 +9,9 @@
 **/fastlane/test_output/
 **/fastlane/logs/
 
+# Temporary unit test results
+TestResults.xcresult
+
 # Bundler artifacts
 **/.bundle/
 **/vendor/bundle/
@@ -74,7 +77,7 @@ Carthage/Build/
 # For more information about the recommended setup visit:
 # https://docs.fastlane.tools/best-practices/source-control/#source-control
 
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots/**/*.png
-fastlane/test_output
+Demo/GentleNetworkingDemo/fastlane/report.xml
+Demo/GentleNetworkingDemo/fastlane/Preview.html
+Demo/GentleNetworkingDemo/fastlane/screenshots/**/*.png
+Demo/GentleNetworkingDemo/fastlane/test_output
