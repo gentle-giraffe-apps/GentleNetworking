@@ -39,7 +39,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          # Use an absolute path so working-directory never matters
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ${{ github.workspace }}/coverage.xml
-          # Optional, but helps Codecov understand repo root for path fixing
           root_dir: ${{ github.workspace }}
