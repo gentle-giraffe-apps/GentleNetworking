@@ -24,8 +24,21 @@ jobs:
           bundler-cache: true
           working-directory: Demo/GentleNetworkingDemo
 
+      - name: Install xcresultparser
+        run: brew install xcresultparser
+
       - name: Build (Demo)
         run: bundle exec fastlane ios build
 
       - name: Run Package Tests
         run: bundle exec fastlane ios package_tests
+
+      - name: Convert coverage
+        run: bundle exec fastlane coverage_xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ github.workspace }}/coverage.xml
+          root_dir: ${{ github.workspace }}

@@ -29,7 +29,15 @@ Build package and demo app
 [bundle exec] fastlane ios package_tests
 ```
 
+Run package unit tests and gather coverage
 
+### ios coverage_xml
+
+```sh
+[bundle exec] fastlane ios coverage_xml
+```
+
+Convert coverage
 
 ----
 
