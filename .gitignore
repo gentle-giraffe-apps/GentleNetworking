@@ -2,6 +2,9 @@
 #
 # gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
 
+# Coverage file
+coverage.xml
+
 # Fastlane artifacts (anywhere in repo)
 **/fastlane/report.xml
 **/fastlane/Preview.html

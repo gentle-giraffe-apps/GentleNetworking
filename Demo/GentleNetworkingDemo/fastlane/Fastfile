@@ -27,13 +27,16 @@ platform :ios do
     )
   end
 
-lane :package_tests do
-    repo_root = File.expand_path("../../..", __dir__) # fastlane → repo root
+  desc "Run package unit tests and gather coverage"
+  lane :package_tests do
+    repo_root = File.expand_path("../../..", __dir__)
 
     Dir.chdir(repo_root) do
       sh <<~CMD
         set -euo pipefail
-        rm -rf TestResults.xcresult
+        rm -rf TestResults.xcresult coverage xccov.json coverage.xml
+        mkdir -p coverage
+
         xcodebuild test \
           -scheme GentleNetworking \
           -sdk iphonesimulator \
@@ -42,5 +45,19 @@ lane :package_tests do
           -resultBundlePath TestResults.xcresult
       CMD
     end
+  end
+
+  desc "Convert coverage"
+  lane :coverage_xml do
+    repo_root = File.expand_path("../../..", __dir__)
+
+    Dir.chdir(repo_root) do
+      sh <<~CMD
+        xcresultparser --output-format cobertura TestResults.xcresult > coverage.xml
+        echo "Generated coverage.xml"
+        ls -la coverage.xml
+      CMD
+    end
+    # how do I upload to codecov?
   end
 end
