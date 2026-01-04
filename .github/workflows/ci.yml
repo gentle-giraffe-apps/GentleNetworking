@@ -46,3 +46,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ${{ github.workspace }}/coverage.xml
           root_dir: ${{ github.workspace }}
+          verbose: true
+          
