@@ -24,6 +24,8 @@ jobs:
           bundler-cache: true
           working-directory: Demo/GentleNetworkingDemo
 
-      - name: Build (Fastlane)
+      - name: Build (Demo)
         run: bundle exec fastlane ios build
 
+      - name: Run Package Tests
+        run: bundle exec fastlane ios package_tests
