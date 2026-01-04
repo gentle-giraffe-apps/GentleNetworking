@@ -53,11 +53,15 @@ platform :ios do
 
     Dir.chdir(repo_root) do
       sh <<~CMD
-        xcresultparser --output-format cobertura TestResults.xcresult > coverage.xml
+        set -euo pipefail
+        xcresultparser \
+          --output-format cobertura \
+          --project-root "#{repo_root}" \
+          TestResults.xcresult > coverage.xml
+
         echo "Generated coverage.xml"
-        ls -la coverage.xml
+        grep -m 3 'filename="' coverage.xml
       CMD
     end
-    # how do I upload to codecov?
   end
 end
