@@ -608,6 +608,27 @@ struct DateDecodingStrategiesTests {
             _ = try decoder.decode(TestUserWithDate.self, from: Data(json.utf8))
         }
     }
+
+    @Test("fallback to standard format when fractional fails")
+    func fallbackToStandardFormat() async throws {
+        // This date uses standard ISO8601 without fractional seconds
+        // The fractional formatter will fail, but the standard formatter should succeed
+        let json = """
+        {"id": 4, "name": "Standard", "createdAt": "2024-03-20T15:45:00Z"}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = DateDecodingStrategies.iso8601FractionalAndNonFractionalSeconds
+        let user = try decoder.decode(TestUserWithDate.self, from: Data(json.utf8))
+        #expect(user.id == 4)
+        #expect(user.name == "Standard")
+        let calendar = Calendar(identifier: .gregorian)
+        let components = calendar.dateComponents(in: TimeZone(identifier: "UTC")!, from: user.createdAt)
+        #expect(components.year == 2024)
+        #expect(components.month == 3)
+        #expect(components.day == 20)
+        #expect(components.hour == 15)
+        #expect(components.minute == 45)
+    }
 }
 
 // MARK: - MockNetworkService Tests
@@ -1064,6 +1085,115 @@ struct HTTPNetworkServiceTests {
         #expect(user.id == 1)
         #expect(user.name == "Custom")
     }
+
+    @Test("handles 401 with nil invalidation handler")
+    func handles401WithNilHandler() async {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 401,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data())
+        }
+        let transport = makeTestTransport()
+        let service = HTTPNetworkService(
+            transport: transport,
+            authService: MockAuthService(),
+            invalidationHandler: nil  // nil handler
+        )
+        do {
+            let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
+            Issue.record("Should have thrown")
+        } catch let error as NetworkError {
+            if case .invalidStatusCode(let code) = error {
+                #expect(code == 401)
+            } else {
+                Issue.record("Wrong error case")
+            }
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
+
+    @Test("accepts status code 201")
+    func acceptsStatusCode201() async throws {
+        let json = """
+        {"id": 1, "name": "Created", "email": "created@test.com"}
+        """
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 201,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+        let transport = makeTestTransport()
+        let service = HTTPNetworkService(
+            transport: transport,
+            authService: MockAuthService()
+        )
+        let user: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
+        #expect(user.id == 1)
+        #expect(user.name == "Created")
+    }
+
+    @Test("accepts status code 299 (upper boundary)")
+    func acceptsStatusCode299() async throws {
+        let json = """
+        {"id": 1, "name": "Boundary", "email": "boundary@test.com"}
+        """
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 299,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+        let transport = makeTestTransport()
+        let service = HTTPNetworkService(
+            transport: transport,
+            authService: MockAuthService()
+        )
+        let user: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
+        #expect(user.id == 1)
+        #expect(user.name == "Boundary")
+    }
+
+    @Test("rejects status code 300 (just outside success range)")
+    func rejectsStatusCode300() async {
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 300,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data())
+        }
+        let transport = makeTestTransport()
+        let service = HTTPNetworkService(
+            transport: transport,
+            authService: MockAuthService()
+        )
+        do {
+            let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
+            Issue.record("Should have thrown")
+        } catch let error as NetworkError {
+            if case .invalidStatusCode(let code) = error {
+                #expect(code == 300)
+            } else {
+                Issue.record("Wrong error case")
+            }
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
 }
 
 // MARK: - Custom EndpointProtocol Implementation Tests
@@ -1124,6 +1254,321 @@ enum APIEndpoint: EndpointProtocol {
         }
     }
 }
+
+// MARK: - RequestPattern Tests
+
+@Suite("RequestPattern")
+struct RequestPatternTests {
+    @Test("matches with nil method accepts any HTTP method")
+    func nilMethodMatchesAny() async throws {
+        let pattern = RequestPattern(method: nil, pathRegex: "/users")
+
+        var getRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        getRequest.httpMethod = "GET"
+        #expect(pattern.matches(getRequest))
+
+        var postRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        postRequest.httpMethod = "POST"
+        #expect(pattern.matches(postRequest))
+
+        var deleteRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        deleteRequest.httpMethod = "DELETE"
+        #expect(pattern.matches(deleteRequest))
+    }
+
+    @Test("returns false for request with no URL")
+    func noURLReturnsFalse() async throws {
+        let pattern = RequestPattern(method: .get, pathRegex: "/users")
+        // Create a request without URL by using init(url:) with a valid URL then setting it to nil
+        var request = URLRequest(url: URL(string: "https://example.com")!)
+        request.url = nil
+        #expect(!pattern.matches(request))
+    }
+
+    @Test("nil hostRegex matches any host")
+    func nilHostMatchesAny() async throws {
+        let pattern = RequestPattern(method: .get, hostRegex: nil, pathRegex: "/api")
+
+        var request1 = URLRequest(url: URL(string: "https://example.com/api")!)
+        request1.httpMethod = "GET"
+        #expect(pattern.matches(request1))
+
+        var request2 = URLRequest(url: URL(string: "https://different.org/api")!)
+        request2.httpMethod = "GET"
+        #expect(pattern.matches(request2))
+    }
+
+    @Test("method mismatch returns false")
+    func methodMismatchReturnsFalse() async throws {
+        let pattern = RequestPattern(method: .post, pathRegex: "/users")
+
+        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        request.httpMethod = "GET"
+        #expect(!pattern.matches(request))
+    }
+
+    @Test("hostRegex filters by host")
+    func hostRegexFilters() async throws {
+        let pattern = RequestPattern(method: .get, hostRegex: "api\\.example\\.com", pathRegex: "/users")
+
+        var matchRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        matchRequest.httpMethod = "GET"
+        #expect(pattern.matches(matchRequest))
+
+        var noMatchRequest = URLRequest(url: URL(string: "https://other.com/users")!)
+        noMatchRequest.httpMethod = "GET"
+        #expect(!pattern.matches(noMatchRequest))
+    }
+
+    @Test("literal initializer escapes special characters")
+    func literalInitializerEscapes() async throws {
+        let pattern = RequestPattern(method: .get, host: "api.example.com", path: "/users/123")
+
+        var request = URLRequest(url: URL(string: "https://api.example.com/users/123")!)
+        request.httpMethod = "GET"
+        #expect(pattern.matches(request))
+
+        // Should NOT match partial paths (regex is anchored)
+        var partialRequest = URLRequest(url: URL(string: "https://api.example.com/users/1234")!)
+        partialRequest.httpMethod = "GET"
+        #expect(!pattern.matches(partialRequest))
+    }
+
+    @Test("path mismatch returns false")
+    func pathMismatchReturnsFalse() async throws {
+        let pattern = RequestPattern(method: .get, pathRegex: "^/users$")
+
+        var request = URLRequest(url: URL(string: "https://api.example.com/posts")!)
+        request.httpMethod = "GET"
+        #expect(!pattern.matches(request))
+    }
+}
+
+// MARK: - CannedRoutesTransport Tests
+
+@Suite("CannedRoutesTransport")
+struct CannedRoutesTransportTests {
+    @Test("firstMatchWins returns first matching route")
+    func firstMatchWins() async throws {
+        let route1 = CannedRoute(
+            pattern: RequestPattern(method: .get, pathRegex: "/users"),
+            response: CannedResponse(string: "route1")
+        )
+        let route2 = CannedRoute(
+            pattern: RequestPattern(method: .get, pathRegex: "/users"),
+            response: CannedResponse(string: "route2")
+        )
+
+        let transport = CannedRoutesTransport(routes: [route1, route2], mode: .firstMatchWins)
+        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        request.httpMethod = "GET"
+
+        let (data, response) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "route1")
+        #expect(response.statusCode == 200)
+    }
+
+    @Test("requireUniqueMatch throws ambiguousMatch for multiple matches")
+    func ambiguousMatchThrows() async throws {
+        let route1 = CannedRoute(
+            pattern: RequestPattern(method: .get, pathRegex: "/users"),
+            response: CannedResponse(string: "route1")
+        )
+        let route2 = CannedRoute(
+            pattern: RequestPattern(method: .get, pathRegex: "/users"),
+            response: CannedResponse(string: "route2")
+        )
+
+        let transport = CannedRoutesTransport(routes: [route1, route2], mode: .requireUniqueMatch)
+        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        request.httpMethod = "GET"
+
+        do {
+            _ = try await transport.data(for: request)
+            Issue.record("Should have thrown ambiguousMatch")
+        } catch CannedRoutesTransport.Error.ambiguousMatch(let count) {
+            #expect(count == 2)
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
+
+    @Test("throws noMatch when no routes match")
+    func noMatchThrows() async throws {
+        let route = CannedRoute(
+            pattern: RequestPattern(method: .post, pathRegex: "/users"),
+            response: CannedResponse(string: "response")
+        )
+
+        let transport = CannedRoutesTransport(routes: [route], mode: .firstMatchWins)
+        var request = URLRequest(url: URL(string: "https://api.example.com/other")!)
+        request.httpMethod = "GET"
+
+        do {
+            _ = try await transport.data(for: request)
+            Issue.record("Should have thrown noMatch")
+        } catch CannedRoutesTransport.Error.noMatch {
+            // Expected
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
+
+    @Test("throws missingRequestURL when request has no URL")
+    func missingURLThrows() async throws {
+        let route = CannedRoute(
+            pattern: RequestPattern(pathRegex: "/users"),
+            response: CannedResponse(string: "response")
+        )
+
+        let transport = CannedRoutesTransport(routes: [route])
+        var request = URLRequest(url: URL(string: "https://example.com")!)
+        request.url = nil
+
+        do {
+            _ = try await transport.data(for: request)
+            Issue.record("Should have thrown missingRequestURL")
+        } catch CannedRoutesTransport.Error.missingRequestURL {
+            // Expected
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
+
+    @Test("requireUniqueMatch succeeds with exactly one match")
+    func requireUniqueMatchSucceeds() async throws {
+        let route = CannedRoute(
+            pattern: RequestPattern(method: .get, pathRegex: "/users"),
+            response: CannedResponse(string: "unique", statusCode: 201)
+        )
+
+        let transport = CannedRoutesTransport(routes: [route], mode: .requireUniqueMatch)
+        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        request.httpMethod = "GET"
+
+        let (data, response) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "unique")
+        #expect(response.statusCode == 201)
+    }
+}
+
+// MARK: - CannedResponseTransport Tests
+
+@Suite("CannedResponseTransport")
+struct CannedResponseTransportTests {
+    @Test("returns canned response for valid request")
+    func returnsCannedResponse() async throws {
+        let transport = CannedResponseTransport(string: "test response", statusCode: 201)
+        let request = URLRequest(url: URL(string: "https://api.example.com/test")!)
+
+        let (data, response) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "test response")
+        #expect(response.statusCode == 201)
+    }
+
+    @Test("throws missingRequestURL when request has no URL")
+    func missingURLThrows() async throws {
+        let transport = CannedResponseTransport(string: "response")
+        var request = URLRequest(url: URL(string: "https://example.com")!)
+        request.url = nil
+
+        do {
+            _ = try await transport.data(for: request)
+            Issue.record("Should have thrown missingRequestURL")
+        } catch CannedResponseTransport.Error.missingRequestURL {
+            // Expected
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
+
+    @Test("CannedResponse with custom headers")
+    func customHeaders() async throws {
+        let response = CannedResponse(
+            string: "json data",
+            statusCode: 200,
+            headerFields: ["Content-Type": "application/json"]
+        )
+        let transport = CannedResponseTransport(cannedResponse: response)
+        let request = URLRequest(url: URL(string: "https://api.example.com/data")!)
+
+        let (_, urlResponse) = try await transport.data(for: request)
+        #expect(urlResponse.value(forHTTPHeaderField: "Content-Type") == "application/json")
+    }
+}
+
+// MARK: - MatchingTransport Tests
+
+@Suite("MatchingTransport")
+struct MatchingTransportTests {
+    @Test("passes request to underlying transport when pattern matches")
+    func passesWhenMatches() async throws {
+        let pattern = RequestPattern(method: .get, pathRegex: "/users")
+        let innerTransport = CannedResponseTransport(string: "matched", statusCode: 200)
+        let transport = MatchingTransport(pattern: pattern, transport: innerTransport)
+
+        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        request.httpMethod = "GET"
+
+        let (data, response) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "matched")
+        #expect(response.statusCode == 200)
+    }
+
+    @Test("throws notMatched when pattern does not match")
+    func throwsWhenNotMatched() async throws {
+        let pattern = RequestPattern(method: .post, pathRegex: "/users")
+        let innerTransport = CannedResponseTransport(string: "response")
+        let transport = MatchingTransport(pattern: pattern, transport: innerTransport)
+
+        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        request.httpMethod = "GET"
+
+        do {
+            _ = try await transport.data(for: request)
+            Issue.record("Should have thrown notMatched")
+        } catch MatchingTransport.MatchingTransportError.notMatched {
+            // Expected
+        } catch {
+            Issue.record("Wrong error type: \(error)")
+        }
+    }
+}
+
+// MARK: - DateEncodingStrategies Tests
+
+@Suite("DateEncodingStrategies")
+struct DateEncodingStrategiesTests {
+    @Test("encodes date with fractional seconds")
+    func encodesFractionalSeconds() async throws {
+        struct DateContainer: Codable {
+            let date: Date
+        }
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = DateEncodingStrategies.iso8601FractionalSeconds
+
+        // Create a specific date
+        let components = DateComponents(
+            calendar: Calendar(identifier: .gregorian),
+            timeZone: TimeZone(identifier: "UTC"),
+            year: 2024, month: 6, day: 15,
+            hour: 10, minute: 30, second: 45,
+            nanosecond: 123_000_000
+        )
+        let date = components.date!
+        let container = DateContainer(date: date)
+
+        let data = try encoder.encode(container)
+        let json = String(data: data, encoding: .utf8)!
+
+        // Should contain fractional seconds format
+        #expect(json.contains("2024-06-15T10:30:45"))
+        #expect(json.contains("Z"))
+    }
+}
+
+// MARK: - Custom EndpointProtocol Tests
 
 @Suite("Custom EndpointProtocol")
 struct CustomEndpointTests {
