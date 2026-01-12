@@ -164,11 +164,11 @@ import GentleNetworking
     }
 
     let authTokenModel: AuthTokenModel = try await networkService.request(
-        to: .signIn(username, password),
+        to: .signIn(username: "user", password: "pass"),
         via: apiEnvironment
     )
 
-    try keyChainAuthService.saveAccessToken(
+    try await keyChainAuthService.saveAccessToken(
         authTokenModel.token
     )
 ```
@@ -183,7 +183,7 @@ import GentleNetworking
     }
 
 	let model: Model = try await networkService.request(
-        to: .model, 
+        to: .model(id: 123),
         via: apiEnvironment
     )
 ```
