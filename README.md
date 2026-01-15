@@ -280,3 +280,5 @@ Free for personal and commercial use.
 Built by **Jonathan Ritchey**
 Gentle Giraffe Apps
 Senior iOS Engineer --- Swift | SwiftUI | Concurrency
+
+![visitors](https://visitor-badge.laobi.icu/badge?page_id=gentle-giraffe-apps.GentleNetworking)
