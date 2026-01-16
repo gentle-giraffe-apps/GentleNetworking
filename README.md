@@ -281,4 +281,4 @@ Built by **Jonathan Ritchey**
 Gentle Giraffe Apps
 Senior iOS Engineer --- Swift | SwiftUI | Concurrency
 
-![visitors](https://visitor-badge.laobi.icu/badge?page_id=gentle-giraffe-apps.GentleNetworking)
+![Visitors](https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fgentle-giraffe-apps%2FGentleNetworking)
