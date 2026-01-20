@@ -10,12 +10,8 @@ A lightweight, Swift-6-ready networking library designed for modern iOS apps usi
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 🔍 **DeepSource Static Analysis (per commit)**  
-[![DeepSource](https://deepsource.io/gh/gentle-giraffe-apps/GentleNetworking.svg)](
-https://deepsource.io/gh/gentle-giraffe-apps/GentleNetworking/?ref=badge
-)
-[![DeepSource Resolved Issues](https://deepsource.io/gh/gentle-giraffe-apps/GentleNetworking.svg?label=resolved+issues)](
-https://deepsource.io/gh/gentle-giraffe-apps/GentleNetworking/?ref=badge
-)
+[![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=active+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/)
+[![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=resolved+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/)
 
 💬 **[Join the discussion. Feedback and questions welcome](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
