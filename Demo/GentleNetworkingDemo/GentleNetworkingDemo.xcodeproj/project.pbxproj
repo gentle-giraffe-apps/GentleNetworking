@@ -36,11 +36,6 @@
 			path = GentleNetworkingDemoTests;
 			sourceTree = "<group>";
 		};
-		88A59A5F2EE75FF90071B0B6 /* GentleNetworkingDemoUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = GentleNetworkingDemoUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,7 +62,6 @@
 			children = (
 				88A59A472EE75FF80071B0B6 /* GentleNetworkingDemo */,
 				88A59A552EE75FF90071B0B6 /* GentleNetworkingDemoTests */,
-				88A59A5F2EE75FF90071B0B6 /* GentleNetworkingDemoUITests */,
 				88A59A462EE75FF80071B0B6 /* Products */,
 			);
 			sourceTree = "<group>";
