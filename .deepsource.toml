@@ -1,0 +1,20 @@
+version = 1
+
+test_patterns = [
+  "Tests/**"
+]
+
+exclude_patterns = [
+  ".build/**",
+  "**/.swiftpm/**",
+  "**/DerivedData/**"
+]
+
+[[analyzers]]
+name = "swift"
+enabled = true
+skip_rules = ["SW-W1001","SW-R1028"]
+
+[[analyzers]]
+name = "secrets"
+enabled = true
