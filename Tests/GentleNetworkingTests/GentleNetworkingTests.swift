@@ -37,8 +37,6 @@ struct HTTPMethodTests {
 
 @Suite("Endpoint")
 struct EndpointTests {
-    let baseURL = URL(string: "https://api.example.com")!
-
     @Test("initialization")
     func initialization() async throws {
         let endpoint = Endpoint(
@@ -65,6 +63,7 @@ struct EndpointTests {
 
     @Test("from creates correct URL")
     func fromCreatesCorrectURL() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = Endpoint(path: "/users/123", method: .get)
         let request = try endpoint.from(baseURL)
         #expect(request.url?.absoluteString == "https://api.example.com/users/123")
@@ -72,6 +71,7 @@ struct EndpointTests {
 
     @Test("from sets HTTP method")
     func fromSetsHTTPMethod() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let methods: [HTTPMethod] = [.get, .post, .put, .delete, .patch]
         for method in methods {
             let endpoint = Endpoint(path: "/test", method: method)
@@ -82,6 +82,7 @@ struct EndpointTests {
 
     @Test("from includes query params")
     func fromIncludesQueryParams() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = Endpoint(
             path: "/search",
             method: .get,
@@ -99,6 +100,7 @@ struct EndpointTests {
 
     @Test("from sets body and content-type")
     func fromSetsBodyAndContentType() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = Endpoint(
             path: "/users",
             method: .post,
@@ -118,6 +120,7 @@ struct EndpointTests {
 
     @Test("from handles nil query")
     func fromHandlesNilQuery() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = Endpoint(path: "/users", method: .get, query: nil)
         let request = try endpoint.from(baseURL)
         #expect(request.url?.absoluteString == "https://api.example.com/users")
@@ -125,6 +128,7 @@ struct EndpointTests {
 
     @Test("from handles empty query")
     func fromHandlesEmptyQuery() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = Endpoint(path: "/users", method: .get, query: [])
         let request = try endpoint.from(baseURL)
         #expect(request.url?.absoluteString == "https://api.example.com/users")
@@ -518,7 +522,8 @@ struct AuthServiceTests {
         let store = MockKeyChainStore()
         try await store.save("test-token", forKey: "accessToken")
         let service = MockAuthService(keyChainStore: store)
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request = try await service.authorize(request)
         #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-token")
     }
@@ -528,7 +533,8 @@ struct AuthServiceTests {
         let store = MockKeyChainStore()
         try await store.save("token", forKey: "accessToken")
         let service = MockAuthService(keyChainStore: store)
-        var request = URLRequest(url: URL(string: "https://api.example.com")!)
+        let url = try #require(URL(string: "https://api.example.com"))
+        var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request = try await service.authorize(request)
         #expect(request.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -539,7 +545,8 @@ struct AuthServiceTests {
     func authorizeWithoutToken() async throws {
         let store = MockKeyChainStore()
         let service = MockAuthService(keyChainStore: store)
-        var request = URLRequest(url: URL(string: "https://api.example.com")!)
+        let url = try #require(URL(string: "https://api.example.com"))
+        var request = URLRequest(url: url)
         request = try await service.authorize(request)
         #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
     }
@@ -570,7 +577,8 @@ struct DateDecodingStrategiesTests {
         #expect(user.id == 1)
         #expect(user.name == "Test")
         let calendar = Calendar(identifier: .gregorian)
-        let components = calendar.dateComponents(in: TimeZone(identifier: "UTC")!, from: user.createdAt)
+        let utc = try #require(TimeZone(identifier: "UTC"))
+        let components = calendar.dateComponents(in: utc, from: user.createdAt)
         #expect(components.year == 2024)
         #expect(components.month == 6)
         #expect(components.day == 15)
@@ -588,7 +596,8 @@ struct DateDecodingStrategiesTests {
         let user = try decoder.decode(TestUserWithDate.self, from: Data(json.utf8))
         #expect(user.id == 2)
         let calendar = Calendar(identifier: .gregorian)
-        let components = calendar.dateComponents(in: TimeZone(identifier: "UTC")!, from: user.createdAt)
+        let utc = try #require(TimeZone(identifier: "UTC"))
+        let components = calendar.dateComponents(in: utc, from: user.createdAt)
         #expect(components.year == 2024)
         #expect(components.month == 12)
         #expect(components.day == 1)
@@ -622,7 +631,8 @@ struct DateDecodingStrategiesTests {
         #expect(user.id == 4)
         #expect(user.name == "Standard")
         let calendar = Calendar(identifier: .gregorian)
-        let components = calendar.dateComponents(in: TimeZone(identifier: "UTC")!, from: user.createdAt)
+        let utc = try #require(TimeZone(identifier: "UTC"))
+        let components = calendar.dateComponents(in: utc, from: user.createdAt)
         #expect(components.year == 2024)
         #expect(components.month == 3)
         #expect(components.day == 20)
@@ -825,12 +835,13 @@ struct HTTPNetworkServiceTests {
         {"id": 1, "name": "Test User", "email": "test@example.com"}
         """
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         let transport = makeTestTransport()
@@ -850,12 +861,13 @@ struct HTTPNetworkServiceTests {
         [{"id": 1, "name": "User 1", "email": "u1@test.com"}, {"id": 2, "name": "User 2", "email": "u2@test.com"}]
         """
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         let service = HTTPNetworkService(
@@ -871,12 +883,13 @@ struct HTTPNetworkServiceTests {
     @Test("requestVoid returns success (200)")
     func requestVoidReturnsSuccess() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let service = HTTPNetworkService(
@@ -893,12 +906,13 @@ struct HTTPNetworkServiceTests {
     @Test("requestVoid returns success (204)")
     func requestVoidReturnsSuccessFor204() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 204,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let service = HTTPNetworkService(
@@ -913,14 +927,15 @@ struct HTTPNetworkServiceTests {
     }
 
     @Test("throws for 404")
-    func throwsFor404() async {
+    func throwsFor404() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 404,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let transport = makeTestTransport()
@@ -943,14 +958,15 @@ struct HTTPNetworkServiceTests {
     }
 
     @Test("throws for 500")
-    func throwsFor500() async {
+    func throwsFor500() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 500,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let transport = makeTestTransport()
@@ -971,14 +987,15 @@ struct HTTPNetworkServiceTests {
     }
 
     @Test("calls invalidation handler on 401")
-    func callsInvalidationHandlerOn401() async {
+    func callsInvalidationHandlerOn401() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 401,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let handler = MockTokenInvalidationHandler()
@@ -1005,12 +1022,13 @@ struct HTTPNetworkServiceTests {
         var capturedRequest: URLRequest?
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         let store = MockKeyChainStore()
@@ -1033,12 +1051,13 @@ struct HTTPNetworkServiceTests {
         var capturedRequest: URLRequest?
         MockURLProtocol.requestHandler = { request in
             capturedRequest = request
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         let store = MockKeyChainStore()
@@ -1059,12 +1078,13 @@ struct HTTPNetworkServiceTests {
         {"id": 1, "name": "Custom", "created_at": "2024-01-15T12:00:00Z"}
         """
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 200,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         struct SnakeCaseUser: Decodable {
@@ -1087,14 +1107,15 @@ struct HTTPNetworkServiceTests {
     }
 
     @Test("handles 401 with nil invalidation handler")
-    func handles401WithNilHandler() async {
+    func handles401WithNilHandler() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 401,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let transport = makeTestTransport()
@@ -1123,12 +1144,13 @@ struct HTTPNetworkServiceTests {
         {"id": 1, "name": "Created", "email": "created@test.com"}
         """
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 201,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         let transport = makeTestTransport()
@@ -1147,12 +1169,13 @@ struct HTTPNetworkServiceTests {
         {"id": 1, "name": "Boundary", "email": "boundary@test.com"}
         """
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 299,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data(json.utf8))
         }
         let transport = makeTestTransport()
@@ -1166,14 +1189,15 @@ struct HTTPNetworkServiceTests {
     }
 
     @Test("rejects status code 300 (just outside success range)")
-    func rejectsStatusCode300() async {
+    func rejectsStatusCode300() async throws {
         MockURLProtocol.requestHandler = { request in
-            let response = HTTPURLResponse(
-                url: request.url!,
+            let url = try #require(request.url)
+            let response = try #require(HTTPURLResponse(
+                url: url,
                 statusCode: 300,
                 httpVersion: nil,
                 headerFields: nil
-            )!
+            ))
             return (response, Data())
         }
         let transport = makeTestTransport()
@@ -1263,15 +1287,18 @@ struct RequestPatternTests {
     func nilMethodMatchesAny() async throws {
         let pattern = RequestPattern(method: nil, pathRegex: "/users")
 
-        var getRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let getURL = try #require(URL(string: "https://api.example.com/users"))
+        var getRequest = URLRequest(url: getURL)
         getRequest.httpMethod = "GET"
         #expect(pattern.matches(getRequest))
 
-        var postRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let postURL = try #require(URL(string: "https://api.example.com/users"))
+        var postRequest = URLRequest(url: postURL)
         postRequest.httpMethod = "POST"
         #expect(pattern.matches(postRequest))
 
-        var deleteRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let deleteURL = try #require(URL(string: "https://api.example.com/users"))
+        var deleteRequest = URLRequest(url: deleteURL)
         deleteRequest.httpMethod = "DELETE"
         #expect(pattern.matches(deleteRequest))
     }
@@ -1280,7 +1307,8 @@ struct RequestPatternTests {
     func noURLReturnsFalse() async throws {
         let pattern = RequestPattern(method: .get, pathRegex: "/users")
         // Create a request without URL by using init(url:) with a valid URL then setting it to nil
-        var request = URLRequest(url: URL(string: "https://example.com")!)
+        let url = try #require(URL(string: "https://example.com"))
+        var request = URLRequest(url: url)
         request.url = nil
         #expect(!pattern.matches(request))
     }
@@ -1289,11 +1317,13 @@ struct RequestPatternTests {
     func nilHostMatchesAny() async throws {
         let pattern = RequestPattern(method: .get, hostRegex: nil, pathRegex: "/api")
 
-        var request1 = URLRequest(url: URL(string: "https://example.com/api")!)
+        let url1 = try #require(URL(string: "https://example.com/api"))
+        var request1 = URLRequest(url: url1)
         request1.httpMethod = "GET"
         #expect(pattern.matches(request1))
 
-        var request2 = URLRequest(url: URL(string: "https://different.org/api")!)
+        let url2 = try #require(URL(string: "https://different.org/api"))
+        var request2 = URLRequest(url: url2)
         request2.httpMethod = "GET"
         #expect(pattern.matches(request2))
     }
@@ -1302,7 +1332,8 @@ struct RequestPatternTests {
     func methodMismatchReturnsFalse() async throws {
         let pattern = RequestPattern(method: .post, pathRegex: "/users")
 
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         #expect(!pattern.matches(request))
     }
@@ -1311,11 +1342,13 @@ struct RequestPatternTests {
     func hostRegexFilters() async throws {
         let pattern = RequestPattern(method: .get, hostRegex: "api\\.example\\.com", pathRegex: "/users")
 
-        var matchRequest = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let matchURL = try #require(URL(string: "https://api.example.com/users"))
+        var matchRequest = URLRequest(url: matchURL)
         matchRequest.httpMethod = "GET"
         #expect(pattern.matches(matchRequest))
 
-        var noMatchRequest = URLRequest(url: URL(string: "https://other.com/users")!)
+        let noMatchURL = try #require(URL(string: "https://other.com/users"))
+        var noMatchRequest = URLRequest(url: noMatchURL)
         noMatchRequest.httpMethod = "GET"
         #expect(!pattern.matches(noMatchRequest))
     }
@@ -1324,12 +1357,14 @@ struct RequestPatternTests {
     func literalInitializerEscapes() async throws {
         let pattern = RequestPattern(method: .get, host: "api.example.com", path: "/users/123")
 
-        var request = URLRequest(url: URL(string: "https://api.example.com/users/123")!)
+        let url = try #require(URL(string: "https://api.example.com/users/123"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         #expect(pattern.matches(request))
 
         // Should NOT match partial paths (regex is anchored)
-        var partialRequest = URLRequest(url: URL(string: "https://api.example.com/users/1234")!)
+        let partialURL = try #require(URL(string: "https://api.example.com/users/1234"))
+        var partialRequest = URLRequest(url: partialURL)
         partialRequest.httpMethod = "GET"
         #expect(!pattern.matches(partialRequest))
     }
@@ -1338,7 +1373,8 @@ struct RequestPatternTests {
     func pathMismatchReturnsFalse() async throws {
         let pattern = RequestPattern(method: .get, pathRegex: "^/users$")
 
-        var request = URLRequest(url: URL(string: "https://api.example.com/posts")!)
+        let url = try #require(URL(string: "https://api.example.com/posts"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         #expect(!pattern.matches(request))
     }
@@ -1360,7 +1396,8 @@ struct CannedRoutesTransportTests {
         )
 
         let transport = CannedRoutesTransport(routes: [route1, route2], mode: .firstMatchWins)
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         let (data, response) = try await transport.data(for: request)
@@ -1380,7 +1417,8 @@ struct CannedRoutesTransportTests {
         )
 
         let transport = CannedRoutesTransport(routes: [route1, route2], mode: .requireUniqueMatch)
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         do {
@@ -1401,7 +1439,8 @@ struct CannedRoutesTransportTests {
         )
 
         let transport = CannedRoutesTransport(routes: [route], mode: .firstMatchWins)
-        var request = URLRequest(url: URL(string: "https://api.example.com/other")!)
+        let url = try #require(URL(string: "https://api.example.com/other"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         do {
@@ -1422,7 +1461,8 @@ struct CannedRoutesTransportTests {
         )
 
         let transport = CannedRoutesTransport(routes: [route])
-        var request = URLRequest(url: URL(string: "https://example.com")!)
+        let url = try #require(URL(string: "https://example.com"))
+        var request = URLRequest(url: url)
         request.url = nil
 
         do {
@@ -1443,7 +1483,8 @@ struct CannedRoutesTransportTests {
         )
 
         let transport = CannedRoutesTransport(routes: [route], mode: .requireUniqueMatch)
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         let (data, response) = try await transport.data(for: request)
@@ -1459,7 +1500,8 @@ struct CannedResponseTransportTests {
     @Test("returns canned response for valid request")
     func returnsCannedResponse() async throws {
         let transport = CannedResponseTransport(string: "test response", statusCode: 201)
-        let request = URLRequest(url: URL(string: "https://api.example.com/test")!)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let request = URLRequest(url: url)
 
         let (data, response) = try await transport.data(for: request)
         #expect(String(data: data, encoding: .utf8) == "test response")
@@ -1469,7 +1511,8 @@ struct CannedResponseTransportTests {
     @Test("throws missingRequestURL when request has no URL")
     func missingURLThrows() async throws {
         let transport = CannedResponseTransport(string: "response")
-        var request = URLRequest(url: URL(string: "https://example.com")!)
+        let url = try #require(URL(string: "https://example.com"))
+        var request = URLRequest(url: url)
         request.url = nil
 
         do {
@@ -1490,7 +1533,8 @@ struct CannedResponseTransportTests {
             headerFields: ["Content-Type": "application/json"]
         )
         let transport = CannedResponseTransport(cannedResponse: response)
-        let request = URLRequest(url: URL(string: "https://api.example.com/data")!)
+        let url = try #require(URL(string: "https://api.example.com/data"))
+        let request = URLRequest(url: url)
 
         let (_, urlResponse) = try await transport.data(for: request)
         #expect(urlResponse.value(forHTTPHeaderField: "Content-Type") == "application/json")
@@ -1507,7 +1551,8 @@ struct MatchingTransportTests {
         let innerTransport = CannedResponseTransport(string: "matched", statusCode: 200)
         let transport = MatchingTransport(pattern: pattern, transport: innerTransport)
 
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         let (data, response) = try await transport.data(for: request)
@@ -1521,7 +1566,8 @@ struct MatchingTransportTests {
         let innerTransport = CannedResponseTransport(string: "response")
         let transport = MatchingTransport(pattern: pattern, transport: innerTransport)
 
-        var request = URLRequest(url: URL(string: "https://api.example.com/users")!)
+        let url = try #require(URL(string: "https://api.example.com/users"))
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
 
         do {
@@ -1556,11 +1602,11 @@ struct DateEncodingStrategiesTests {
             hour: 10, minute: 30, second: 45,
             nanosecond: 123_000_000
         )
-        let date = components.date!
+        let date = try #require(components.date)
         let container = DateContainer(date: date)
 
         let data = try encoder.encode(container)
-        let json = String(data: data, encoding: .utf8)!
+        let json = try #require(String(data: data, encoding: .utf8))
 
         // Should contain fractional seconds format
         #expect(json.contains("2024-06-15T10:30:45"))
@@ -1572,10 +1618,9 @@ struct DateEncodingStrategiesTests {
 
 @Suite("Custom EndpointProtocol")
 struct CustomEndpointTests {
-    let baseURL = URL(string: "https://api.example.com")!
-
     @Test("get users endpoint")
     func getUsersEndpoint() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = APIEndpoint.getUsers
         let request = try endpoint.from(baseURL)
         #expect(request.url?.path == "/users")
@@ -1585,6 +1630,7 @@ struct CustomEndpointTests {
 
     @Test("get user endpoint")
     func getUserEndpoint() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = APIEndpoint.getUser(id: 42)
         let request = try endpoint.from(baseURL)
         #expect(request.url?.path == "/users/42")
@@ -1594,6 +1640,7 @@ struct CustomEndpointTests {
 
     @Test("create user endpoint")
     func createUserEndpoint() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = APIEndpoint.createUser(name: "John", email: "john@test.com")
         let request = try endpoint.from(baseURL)
         #expect(request.url?.path == "/users")
@@ -1607,6 +1654,7 @@ struct CustomEndpointTests {
 
     @Test("delete user endpoint")
     func deleteUserEndpoint() async throws {
+        let baseURL = try #require(URL(string: "https://api.example.com"))
         let endpoint = APIEndpoint.deleteUser(id: 99)
         let request = try endpoint.from(baseURL)
         #expect(request.url?.path == "/users/99")
