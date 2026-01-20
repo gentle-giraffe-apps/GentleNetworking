@@ -67,6 +67,19 @@ The project is preconfigured with a local Swift Package reference to `GentleNetw
 
 ---
 
+## Quality & Tooling
+
+This project enforces quality gates via CI and static analysis:
+
+- **CI:** All commits to `main` must pass GitHub Actions checks
+- **Static analysis:** DeepSource runs on every commit to `main`.  
+  The badge indicates the current number of outstanding static analysis issues.
+- **Test coverage:** Codecov reports line coverage for the `main` branch
+
+These checks are intended to keep the design system safe to evolve over time.
+
+---
+
 ## Architecture
 
 GentleNetworking is centered around a single, protocol-driven `HTTPNetworkService` that coordinates requests using injected endpoint, environment, and authentication abstractions.
