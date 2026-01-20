@@ -1,8 +1,6 @@
 # GentleNetworking
 
-**GentleNetworking** is a lightweight, Swift-6-ready networking library
-designed for modern iOS apps using `async/await`, clean architecture,
-and testable abstractions.
+A lightweight, Swift-6-ready networking library designed for modern iOS apps using `async/await`, clean architecture, and testable abstractions.
 
 [![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/branch/main/graph/badge.svg)](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking)
@@ -274,12 +272,6 @@ GentleNetworking is built around:
 
 It is intentionally minimal and avoids over-abstracting or hiding
 networking behavior.
-
----
-
-## 📱 Platform Support
-
-- iOS 17+
 
 ---
 
