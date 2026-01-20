@@ -27,7 +27,7 @@ public struct DateDecodingStrategies {
     }
 }
 
-public struct DateEncodingStrategies {
+public enum DateEncodingStrategies {
 
     /// Encodes dates as ISO-8601 with fractional seconds.
     /// Example:
