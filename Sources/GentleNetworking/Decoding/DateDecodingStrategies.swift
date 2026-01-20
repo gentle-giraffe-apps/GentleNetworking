@@ -2,7 +2,7 @@
 
 import Foundation
 
-public struct DateDecodingStrategies {
+public enum DateDecodingStrategies {
     public static let iso8601FractionalAndNonFractionalSeconds: JSONDecoder.DateDecodingStrategy = .custom { decoder in
         let container = try decoder.singleValueContainer()
         let raw = try container.decode(String.self)
