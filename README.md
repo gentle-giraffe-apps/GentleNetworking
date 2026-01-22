@@ -11,8 +11,7 @@ A lightweight, Swift-6-ready networking library designed for modern iOS apps usi
 | Metric            | Status | Trend |
 |:------------------|:------ |:------|
 | **Coverage**      | [![Coverage](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/branch/main/graph/badge.svg)](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking) | <a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg?token=XHHY2SO3U5" height="40" style="max-width: 420px;" alt="Codecov coverage chart" /></a> |
-| **Static Analysis** | (per commit) | [![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=active+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/)<br/>[![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=resolved+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/)
- |
+| **Static Analysis** | (per commit) | [![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=active+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/)<br/>[![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=resolved+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/) |
 
 💬 **[Join the discussion. Feedback and questions welcome](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
