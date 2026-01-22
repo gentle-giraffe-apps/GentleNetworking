@@ -14,7 +14,7 @@ A lightweight, Swift-6-ready networking library designed for modern iOS apps usi
 [![DeepSource](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking.svg/?label=resolved+issues&show_trend=true&token=KUHcR9n5Vm47Sq14uoip-8s7)](https://app.deepsource.com/gh/gentle-giraffe-apps/GentleNetworking/)
 
 <sub><strong>Codecov Snapshot</strong></sub><br/>
-<a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg" height="40" style="max-width: 420px;" alt="Codecov coverage chart" /></a>
+<a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg" height="80" style="max-width: 420px;" alt="Codecov coverage chart" /></a>
 
 💬 **[Join the discussion. Feedback and questions welcome](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
