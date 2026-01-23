@@ -21,7 +21,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane ios build
 ```
 
-Build package and demo app
+Build package and demo app (including tests with coverage)
 
 ### ios package_tests
 
@@ -29,7 +29,7 @@ Build package and demo app
 [bundle exec] fastlane ios package_tests
 ```
 
-Run package unit tests and gather coverage
+Run package unit tests (no recompilation)
 
 ### ios coverage_xml
 
