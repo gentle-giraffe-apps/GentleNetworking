@@ -4,7 +4,6 @@
 
 - **Single test file**: `Tests/GentleNetworkingTests/GentleNetworkingTests.swift`
 - **Framework**: Swift Testing (`@Suite`, `@Test`, `#expect`) — not XCTest
-- **91 tests** across 18 suites
 
 ## Running Tests
 
@@ -42,26 +41,26 @@ struct HTTPMethodTests {
 
 ## Test Suites
 
-| Suite | Tests | What it covers |
-|-------|-------|---------------|
-| `HTTPMethodTests` | 1 | Enum raw values |
-| `EndpointTests` | 8 | Init, URL construction, method, query, body, content type |
-| `APIEnvironmentTests` | 3 | Base URL, nil, equatability |
-| `MockKeyChainStoreTests` | 6 | Save/read/delete/overwrite/multi-key |
-| `KeyChainStoreErrorTests` | 1 | Error case instantiation |
-| `SystemKeyChainStoreEnvironmentTests` | 1 | SwiftPM vs host-app keychain behavior |
-| `AuthServiceTests` | 10 | Header defaults, token CRUD, authorize, missing token |
-| `DateDecodingStrategiesTests` | 4 | Standard ISO8601, fractional, invalid, fallback |
-| `DateEncodingStrategiesTests` | 1 | Fractional seconds encoding |
-| `MockNetworkServiceTests` | 6 | Decode single/array, void, delay, error, custom decoder |
-| `NetworkErrorTests` | 3 | Status code storage, nil, Error conformance |
-| `NetworkServiceEmptyResponseResultTests` | 1 | Success code storage |
-| `HTTPNetworkServiceTests` | 13 | Full integration via MockURLProtocol (`.serialized`) |
-| `RequestPatternTests` | 7 | Method/host/path matching, regex, literal escaping |
-| `CannedRoutesTransportTests` | 5 | First-match, unique-match, no-match, missing URL |
-| `CannedResponseTransportTests` | 3 | Response, missing URL, custom headers |
-| `MatchingTransportTests` | 2 | Match pass-through, mismatch error |
-| `CustomEndpointTests` | 4 | Enum-based EndpointProtocol (GET, POST, DELETE) |
+| Suite | What it covers |
+|-------|---------------|
+| `HTTPMethodTests` | Enum raw values |
+| `EndpointTests` | Init, URL construction, method, query, body, content type |
+| `APIEnvironmentTests` | Base URL, nil, equatability |
+| `MockKeyChainStoreTests` | Save/read/delete/overwrite/multi-key |
+| `KeyChainStoreErrorTests` | Error case instantiation |
+| `SystemKeyChainStoreEnvironmentTests` | SwiftPM vs host-app keychain behavior |
+| `AuthServiceTests` | Header defaults, token CRUD, authorize, missing token |
+| `DateDecodingStrategiesTests` | Standard ISO8601, fractional, invalid, fallback |
+| `DateEncodingStrategiesTests` | Fractional seconds encoding |
+| `MockNetworkServiceTests` | Decode single/array, void, delay, error, custom decoder |
+| `NetworkErrorTests` | Status code storage, nil, Error conformance |
+| `NetworkServiceEmptyResponseResultTests` | Success code storage |
+| `HTTPNetworkServiceTests` | Full integration via MockURLProtocol (`.serialized`) |
+| `RequestPatternTests` | Method/host/path matching, regex, literal escaping |
+| `CannedRoutesTransportTests` | First-match, unique-match, no-match, missing URL |
+| `CannedResponseTransportTests` | Response, missing URL, custom headers |
+| `MatchingTransportTests` | Match pass-through, mismatch error |
+| `CustomEndpointTests` | Enum-based EndpointProtocol (GET, POST, DELETE) |
 
 ## Mock Inventory
 
