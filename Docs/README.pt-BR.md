@@ -1,8 +1,8 @@
 # GentleNetworking
 
-A lightweight, Swift-6-ready networking library designed for modern iOS apps using `async/await`, clean architecture, and testable abstractions.
+Uma biblioteca de networking leve, pronta para Swift 6, projetada para apps iOS modernos usando `async/await`, arquitetura limpa e abstrações testáveis.
 
-> 🌍 **Language** · Canonical docs in English · [Español](Docs/README.es.md) · [Português (Brasil)](Docs/README.pt-BR.md) · [日本語](Docs/README.ja.md)
+> 🌍 **Idioma** · [English](../README.md) · [Español](README.es.md) · Português (Brasil) · [日本語](README.ja.md)
 
 [![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/branch/main/graph/badge.svg)](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking)
@@ -16,53 +16,53 @@ A lightweight, Swift-6-ready networking library designed for modern iOS apps usi
 
 ---
 
-## ✨ Features
+## ✨ Funcionalidades
 
-- ✅ Native `async/await` API
-- ✅ Protocol-based, fully mockable networking layer
-- ✅ Typed request / response decoding
-- ✅ Swift 6 + Swift Concurrency friendly
-- ✅ Designed for MVVM / Clean Architecture
-- ✅ Zero third-party dependencies
-- ✅ Built-in canned response transports for testing
+- ✅ API nativa com `async/await`
+- ✅ Camada de networking baseada em protocolos, totalmente mockável
+- ✅ Decodificação tipada de request / response
+- ✅ Compatível com Swift 6 + Swift Concurrency
+- ✅ Projetada para MVVM / Clean Architecture
+- ✅ Zero dependências de terceiros
+- ✅ Transports com respostas predefinidas para testes
 
-💬 **[Join the discussion. Feedback and questions welcome](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
+💬 **[Participe da discussão. Feedback e perguntas são bem-vindos](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
 ---
 
-## Demo App
+## App de Demonstração
 
-A runnable SwiftUI demo app is included in this repository using a local package reference.
+Uma app de demonstração em SwiftUI executável está incluída neste repositório usando uma referência local ao pacote.
 
-### How to Run
-1. Clone the repository:
+### Como Executar
+1. Clone o repositório:
    ```bash
    git clone https://github.com/gentle-giraffe-apps/GentleNetworking.git
    ```
-2. Open the demo project:
+2. Abra o projeto de demonstração:
    ```
    Demo/GentleNetworkingDemo/GentleNetworkingDemo.xcodeproj
    ```
-3. Select an iOS 17+ simulator.
-4. Build & Run (⌘R).
+3. Selecione um simulador com iOS 17+.
+4. Compile e execute (⌘R).
 
-The project is preconfigured with a local Swift Package reference to `GentleNetworking` and should run without any additional setup.
+O projeto vem pré-configurado com uma referência local ao pacote Swift `GentleNetworking` e deve funcionar sem configuração adicional.
 
 ---
 
-## 📦 Installation (Swift Package Manager)
+## 📦 Instalação (Swift Package Manager)
 
 ### Via Xcode
 
-1. Open your project in Xcode
-2. Go to **File → Add Packages...**
-3. Enter the repository URL: `https://github.com/gentle-giraffe-apps/GentleNetworking.git`
-4. Choose a version rule (or `main` while developing)
-5. Add the **GentleNetworking** product to your app target
+1. Abra seu projeto no Xcode
+2. Vá em **File → Add Packages...**
+3. Insira a URL do repositório: `https://github.com/gentle-giraffe-apps/GentleNetworking.git`
+4. Escolha uma regra de versão (ou `main` durante o desenvolvimento)
+5. Adicione o produto **GentleNetworking** ao seu target
 
 ### Via Package.swift
 
-Add the dependency to your `Package.swift`:
+Adicione a dependência ao seu `Package.swift`:
 
 ``` swift
 dependencies: [
@@ -70,7 +70,7 @@ dependencies: [
 ]
 ```
 
-Then add `"GentleNetworking"` to the target that needs it:
+Em seguida, adicione `"GentleNetworking"` ao target que precisar:
 
 ``` swift
 .target(
@@ -81,27 +81,25 @@ Then add `"GentleNetworking"` to the target that needs it:
 
 ---
 
-## Quality & Tooling
+## Qualidade e Ferramentas
 
-This project enforces quality gates via CI and static analysis:
+Este projeto aplica controles de qualidade via CI e análise estática:
 
-- **CI:** All commits to `main` must pass GitHub Actions checks
-- **Static analysis:** DeepSource runs on every commit to `main`.  
-  The badge indicates the current number of outstanding static analysis issues.
-- **Test coverage:** Codecov reports line coverage for the `main` branch
+- **CI:** Todos os commits em `main` devem passar nas verificações do GitHub Actions
+- **Análise estática:** DeepSource é executado em cada commit em `main`.
+  O badge indica o número atual de issues de análise estática pendentes.
+- **Cobertura de testes:** Codecov reporta a cobertura de linhas para a branch `main`
 
-<sub><strong>Codecov Snapshot</strong></sub><br/>
-<a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg" height="80" style="max-width: 420px;" alt="Codecov coverage chart" /></a>
+<sub><strong>Snapshot do Codecov</strong></sub><br/>
+<a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg" height="80" style="max-width: 420px;" alt="Gráfico de cobertura do Codecov" /></a>
 
-These checks are intended to keep the design system safe to evolve over time.
+Essas verificações são projetadas para manter o sistema seguro à medida que evolui.
 
 ---
 
-## Architecture
+## Arquitetura
 
-GentleNetworking is centered around a single, protocol-driven `HTTPNetworkService` that coordinates requests using injected endpoint, environment, and authentication abstractions.
-
-
+GentleNetworking é centrado em um único `HTTPNetworkService` baseado em protocolos que coordena as requisições usando abstrações injetadas de endpoint, ambiente e autenticação.
 
 ```mermaid
 flowchart TB
@@ -113,7 +111,7 @@ flowchart TB
 
     HTTP --> Endpoint
     HTTP --> Env
-    HTTP -->|injected| Auth
+    HTTP -->|injetado| Auth
 ```
 
 ### Endpoint
@@ -124,12 +122,12 @@ flowchart TB
 
     EndpointProtocol["EndpointProtocol<br/><br/>- path<br/>- method<br/>- query<br/>- body<br/>- requiresAuth"]
 
-    APIEndpoint -->|conforms to| EndpointProtocol
+    APIEndpoint -->|conforma a| EndpointProtocol
 ```
 
-## 🚀 Basic Usage
+## 🚀 Uso Básico
 
-### 1. Define an API and Endpoints
+### 1. Definir uma API e Endpoints
 
 ``` swift
 import GentleNetworking
@@ -185,7 +183,7 @@ nonisolated enum APIEndpoint: EndpointProtocol {
 
 ---
 
-### 2. Create a Network Service
+### 2. Criar um Network Service
 
 ``` swift
 let networkService = HTTPNetworkService()
@@ -193,9 +191,9 @@ let networkService = HTTPNetworkService()
 
 ---
 
-### 3. Authenticate if Needed
+### 3. Autenticar se Necessário
 
-`SystemKeyChainAuthService` is the built-in implementation of `AuthServiceProtocol`. It stores a Bearer token in the system keychain and automatically attaches it to requests for endpoints where `requiresAuth` is `true`.
+`SystemKeyChainAuthService` é a implementação integrada do `AuthServiceProtocol`. Ele armazena um token Bearer no keychain do sistema e o anexa automaticamente às requisições de endpoints onde `requiresAuth` é `true`.
 
 ``` swift
 let keyChainAuthService = SystemKeyChainAuthService()
@@ -215,9 +213,9 @@ try await keyChainAuthService.saveAccessToken(
 ```
 
 ---
-### 4. Request a Model
+### 4. Solicitar um Modelo
 
-Use `request` to decode a single object from the response:
+Use `request` para decodificar um único objeto da resposta:
 
 ``` swift
 struct Model: Decodable, Sendable {
@@ -232,9 +230,9 @@ let model: Model = try await networkService.request(
 ```
 
 ---
-### 5. Request an Array of Models
+### 5. Solicitar um Array de Modelos
 
-Use `requestModels` to decode an array of objects from the response:
+Use `requestModels` para decodificar um array de objetos da resposta:
 
 ``` swift
 let models: [Model] = try await networkService.requestModels(
@@ -245,13 +243,13 @@ let models: [Model] = try await networkService.requestModels(
 
 ---
 
-## 🧪 Testing
+## 🧪 Testes
 
-GentleNetworking provides a transport-layer abstraction for easy mocking in tests.
+GentleNetworking fornece uma abstração na camada de transporte para facilitar o mocking em testes.
 
 ### CannedResponseTransport
 
-Returns a fixed response for any request:
+Retorna uma resposta fixa para qualquer requisição:
 
 ``` swift
 let transport = CannedResponseTransport(
@@ -264,7 +262,7 @@ let networkService = HTTPNetworkService(transport: transport)
 
 ### CannedRoutesTransport
 
-Match requests by method and path pattern for more realistic test scenarios:
+Associa requisições por método e padrão de rota para cenários de teste mais realistas:
 
 ``` swift
 let transport = CannedRoutesTransport(routes: [
@@ -283,38 +281,37 @@ let networkService = HTTPNetworkService(transport: transport)
 
 ---
 
-## 🧭 Design Philosophy
+## 🧭 Filosofia de Design
 
-GentleNetworking is built around:
+GentleNetworking é construído em torno de:
 
-- ✅ Predictability over magic
-- ✅ Protocol-driven design
-- ✅ Explicit dependency injection
-- ✅ Modern Swift concurrency
-- ✅ Testability by default
-- ✅ Small surface area with strong guarantees
+- ✅ Previsibilidade acima de mágica
+- ✅ Design baseado em protocolos
+- ✅ Injeção de dependências explícita
+- ✅ Concorrência moderna do Swift
+- ✅ Testabilidade por padrão
+- ✅ Superfície de API pequena com garantias sólidas
 
-It is intentionally minimal and avoids over-abstracting or hiding
-networking behavior.
-
----
-
-## 🤖 Tooling Note
-
-Portions of drafting and editorial refinement in this repository were accelerated using large language models (including ChatGPT, Claude, and Gemini) under direct human design, validation, and final approval. All technical decisions, code, and architectural conclusions are authored and verified by the repository maintainer.
+É intencionalmente mínimo e evita sobre-abstrair ou ocultar o comportamento de networking.
 
 ---
 
-## 🔐 License
+## 🤖 Nota sobre Ferramentas
 
-MIT License
-Free for personal and commercial use.
+Partes da redação e do refinamento editorial neste repositório foram acelerados usando modelos de linguagem grandes (incluindo ChatGPT, Claude e Gemini) sob design humano direto, validação e aprovação final. Todas as decisões técnicas, código e conclusões arquiteturais são de autoria e verificação do mantenedor do repositório.
 
 ---
 
-## 👤 Author
+## 🔐 Licença
 
-Built by **Jonathan Ritchey**
+Licença MIT
+Livre para uso pessoal e comercial.
+
+---
+
+## 👤 Autor
+
+Criado por **Jonathan Ritchey**
 Gentle Giraffe Apps
 Senior iOS Engineer --- Swift | SwiftUI | Concurrency
 
