@@ -62,6 +62,25 @@ The project is preconfigured with a local Swift Package reference to `GentleNetw
 4. Choose a version rule (or `main` while developing)
 5. Add the **GentleNetworking** product to your app target
 
+### Via Package.swift
+
+Add the dependency to your `Package.swift`:
+
+``` swift
+dependencies: [
+    .package(url: "https://github.com/gentle-giraffe-apps/GentleNetworking.git", from: "1.0.0")
+]
+```
+
+Then add `"GentleNetworking"` to the target that needs it:
+
+``` swift
+.target(
+    name: "YourApp",
+    dependencies: ["GentleNetworking"]
+)
+```
+
 ---
 
 ## Quality & Tooling
@@ -114,54 +133,53 @@ flowchart TB
 ``` swift
 import GentleNetworking
 
-    let apiEnvironment = DefaultAPIEnvironment(
-        baseURL: URL(string: "https://api.company.com")
-    )
+let apiEnvironment = DefaultAPIEnvironment(
+    baseURL: URL(string: "https://api.company.com")
+)
 
-    nonisolated enum APIEndpoint: EndpointProtocol {
-        case signIn(username: String, password: String)
-        case model(id: Int)
-        case models
-    
-        var path: String {
-            switch self {
-            case .signIn: "/api/signIn"
-            case .model(let id): "/api/model/\(id)"
-            case .models: "/api/models"
-            }
-        }
+nonisolated enum APIEndpoint: EndpointProtocol {
+    case signIn(username: String, password: String)
+    case model(id: Int)
+    case models
 
-        var method: HTTPMethod {
-            switch self {
-            case .signIn: .post
-            case .model, .models: .get
-            }
-        }
-
-        var query: [URLQueryItem]? {
-            switch self {
-            case .signIn, .model, .models: nil
-            }
-        }
-
-        var body: [String: EndpointAnyEncodable]? {
-            switch self {
-            case .signIn(let username, let password): [
-                "username": EndpointAnyEncodable(username),
-                "password": EndpointAnyEncodable(password)
-            ]
-            case .model, .models: nil
-            }
-        }
-        
-        var requiresAuth: Bool {
-            switch self {
-            case .model, .models: true
-            case .signIn(username: _, password: _): false
-            }
+    var path: String {
+        switch self {
+        case .signIn: "/api/signIn"
+        case .model(let id): "/api/model/\(id)"
+        case .models: "/api/models"
         }
     }
 
+    var method: HTTPMethod {
+        switch self {
+        case .signIn: .post
+        case .model, .models: .get
+        }
+    }
+
+    var query: [URLQueryItem]? {
+        switch self {
+        case .signIn, .model, .models: nil
+        }
+    }
+
+    var body: [String: EndpointAnyEncodable]? {
+        switch self {
+        case .signIn(let username, let password): [
+            "username": EndpointAnyEncodable(username),
+            "password": EndpointAnyEncodable(password)
+        ]
+        case .model, .models: nil
+        }
+    }
+
+    var requiresAuth: Bool {
+        switch self {
+        case .model, .models: true
+        case .signIn(username: _, password: _): false
+        }
+    }
+}
 ```
 
 ---
@@ -169,53 +187,59 @@ import GentleNetworking
 ### 2. Create a Network Service
 
 ``` swift
-	let networkService = HTTPNetworkService()
+let networkService = HTTPNetworkService()
 ```
 
 ---
 
 ### 3. Authenticate if Needed
 
+`SystemKeyChainAuthService` is the built-in implementation of `AuthServiceProtocol`. It stores a Bearer token in the system keychain and automatically attaches it to requests for endpoints where `requiresAuth` is `true`.
+
 ``` swift
-    let keyChainAuthService = SystemKeyChainAuthService()
+let keyChainAuthService = SystemKeyChainAuthService()
 
-    struct AuthTokenModel: Decodable, Sendable {
-        let token: String
-    }
+struct AuthTokenModel: Decodable, Sendable {
+    let token: String
+}
 
-    let authTokenModel: AuthTokenModel = try await networkService.request(
-        to: .signIn(username: "user", password: "pass"),
-        via: apiEnvironment
-    )
+let authTokenModel: AuthTokenModel = try await networkService.request(
+    to: .signIn(username: "user", password: "pass"),
+    via: apiEnvironment
+)
 
-    try await keyChainAuthService.saveAccessToken(
-        authTokenModel.token
-    )
+try await keyChainAuthService.saveAccessToken(
+    authTokenModel.token
+)
 ```
 
 ---
 ### 4. Request a Model
 
-``` swift
-    struct Model: Decodable, Sendable {
-        let id: Int
-        let property: String
-    }
+Use `request` to decode a single object from the response:
 
-	let model: Model = try await networkService.request(
-        to: .model(id: 123),
-        via: apiEnvironment
-    )
+``` swift
+struct Model: Decodable, Sendable {
+    let id: Int
+    let property: String
+}
+
+let model: Model = try await networkService.request(
+    to: .model(id: 123),
+    via: apiEnvironment
+)
 ```
 
 ---
 ### 5. Request an Array of Models
 
+Use `requestModels` to decode an array of objects from the response:
+
 ``` swift
-	let models: [Model] = try await networkService.requestModels(
-        to: .models, 
-        via: apiEnvironment
-    )
+let models: [Model] = try await networkService.requestModels(
+    to: .models,
+    via: apiEnvironment
+)
 ```
 
 ---
