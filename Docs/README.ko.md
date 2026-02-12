@@ -1,8 +1,8 @@
 # GentleNetworking
 
-Una biblioteca de networking ligera, lista para Swift 6, diseñada para apps iOS modernas con `async/await`, arquitectura limpia y abstracciones testeables.
+`async/await`, 클린 아키텍처, 테스트 가능한 추상화를 사용하는 현대적인 iOS 앱을 위한 경량 Swift 6 지원 네트워킹 라이브러리입니다.
 
-> 🌍 **Idioma** · [English](../README.md) · Español · [Português (Brasil)](README.pt-BR.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · [한국어](README.ko.md) · [Русский](README.ru.md)
+> 🌍 **언어** · [English](../README.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md) · 한국어 · [Русский](README.ru.md)
 
 [![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/branch/main/graph/badge.svg)](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking)
@@ -16,53 +16,53 @@ Una biblioteca de networking ligera, lista para Swift 6, diseñada para apps iOS
 
 ---
 
-## ✨ Características
+## ✨ 특징
 
-- ✅ API nativa con `async/await`
-- ✅ Capa de networking basada en protocolos, completamente mockeable
-- ✅ Decodificación tipada de request / response
-- ✅ Compatible con Swift 6 + Swift Concurrency
-- ✅ Diseñada para MVVM / Clean Architecture
-- ✅ Sin dependencias de terceros
-- ✅ Transports con respuestas predefinidas para testing
+- ✅ 네이티브 `async/await` API
+- ✅ 프로토콜 기반의 완전히 Mock 가능한 네트워킹 계층
+- ✅ 타입 기반 요청 / 응답 디코딩
+- ✅ Swift 6 + Swift Concurrency 호환
+- ✅ MVVM / Clean Architecture에 맞게 설계
+- ✅ 서드파티 의존성 없음
+- ✅ 테스트를 위한 미리 정의된 응답 Transport 내장
 
-💬 **[Únete a la discusión. Comentarios y preguntas son bienvenidos](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
+💬 **[토론에 참여하세요. 피드백과 질문을 환영합니다](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
 ---
 
-## App de Demostración
+## 데모 앱
 
-Se incluye una app de demostración en SwiftUI en este repositorio usando una referencia local al paquete.
+로컬 패키지 참조를 사용하는 실행 가능한 SwiftUI 데모 앱이 이 저장소에 포함되어 있습니다.
 
-### Cómo Ejecutar
-1. Clona el repositorio:
+### 실행 방법
+1. 저장소를 클론합니다:
    ```bash
    git clone https://github.com/gentle-giraffe-apps/GentleNetworking.git
    ```
-2. Abre el proyecto de demostración:
+2. 데모 프로젝트를 엽니다:
    ```
    Demo/GentleNetworkingDemo/GentleNetworkingDemo.xcodeproj
    ```
-3. Selecciona un simulador con iOS 17+.
-4. Compila y ejecuta (⌘R).
+3. iOS 17+ 시뮬레이터를 선택합니다.
+4. 빌드 및 실행 (⌘R).
 
-El proyecto viene preconfigurado con una referencia local al paquete Swift `GentleNetworking` y debería funcionar sin configuración adicional.
+프로젝트는 `GentleNetworking`에 대한 로컬 Swift Package 참조로 사전 구성되어 있으며, 추가 설정 없이 실행할 수 있습니다.
 
 ---
 
-## 📦 Instalación (Swift Package Manager)
+## 📦 설치 (Swift Package Manager)
 
-### Vía Xcode
+### Xcode를 통한 설치
 
-1. Abre tu proyecto en Xcode
-2. Ve a **File → Add Packages...**
-3. Ingresa la URL del repositorio: `https://github.com/gentle-giraffe-apps/GentleNetworking.git`
-4. Elige una regla de versión (o `main` durante el desarrollo)
-5. Agrega el producto **GentleNetworking** a tu target
+1. Xcode에서 프로젝트를 엽니다
+2. **File → Add Packages...** 로 이동합니다
+3. 저장소 URL을 입력합니다: `https://github.com/gentle-giraffe-apps/GentleNetworking.git`
+4. 버전 규칙을 선택합니다 (개발 중에는 `main`도 가능)
+5. **GentleNetworking** 제품을 앱 타겟에 추가합니다
 
-### Vía Package.swift
+### Package.swift를 통한 설치
 
-Agrega la dependencia a tu `Package.swift`:
+`Package.swift`에 의존성을 추가합니다:
 
 ``` swift
 dependencies: [
@@ -70,7 +70,7 @@ dependencies: [
 ]
 ```
 
-Luego agrega `"GentleNetworking"` al target que lo necesite:
+그런 다음 필요한 타겟에 `"GentleNetworking"`을 추가합니다:
 
 ``` swift
 .target(
@@ -81,25 +81,25 @@ Luego agrega `"GentleNetworking"` al target que lo necesite:
 
 ---
 
-## Calidad y Herramientas
+## 품질 및 도구
 
-Este proyecto aplica controles de calidad mediante CI y análisis estático:
+이 프로젝트는 CI와 정적 분석을 통해 품질 게이트를 적용합니다:
 
-- **CI:** Todos los commits a `main` deben pasar las verificaciones de GitHub Actions
-- **Análisis estático:** DeepSource se ejecuta en cada commit a `main`.
-  El badge indica el número actual de issues de análisis estático pendientes.
-- **Cobertura de tests:** Codecov reporta la cobertura de líneas para la rama `main`
+- **CI:** `main`에 대한 모든 커밋은 GitHub Actions 검사를 통과해야 합니다
+- **정적 분석:** DeepSource가 `main`에 대한 모든 커밋에서 실행됩니다.
+  배지는 현재 미해결 정적 분석 이슈 수를 나타냅니다.
+- **테스트 커버리지:** Codecov가 `main` 브랜치의 라인 커버리지를 보고합니다
 
-<sub><strong>Snapshot de Codecov</strong></sub><br/>
-<a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg" height="80" style="max-width: 420px;" alt="Gráfico de cobertura de Codecov" /></a>
+<sub><strong>Codecov 스냅샷</strong></sub><br/>
+<a href="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking"><img src="https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/graphs/icicle.svg" height="80" style="max-width: 420px;" alt="Codecov 커버리지 차트" /></a>
 
-Estas verificaciones están diseñadas para mantener el sistema seguro a medida que evoluciona.
+이러한 검사는 설계 시스템이 안전하게 발전할 수 있도록 하기 위한 것입니다.
 
 ---
 
-## Arquitectura
+## 아키텍처
 
-GentleNetworking está centrado en un único `HTTPNetworkService` basado en protocolos que coordina las peticiones usando abstracciones inyectadas de endpoint, entorno y autenticación.
+GentleNetworking은 주입된 엔드포인트, 환경, 인증 추상화를 사용하여 요청을 조율하는 단일 프로토콜 기반 `HTTPNetworkService`를 중심으로 구축되었습니다.
 
 ```mermaid
 flowchart TB
@@ -111,10 +111,10 @@ flowchart TB
 
     HTTP --> Endpoint
     HTTP --> Env
-    HTTP -->|inyectado| Auth
+    HTTP -->|주입| Auth
 ```
 
-### Endpoint
+### 엔드포인트
 
 ```mermaid
 flowchart TB
@@ -122,12 +122,12 @@ flowchart TB
 
     EndpointProtocol["EndpointProtocol<br/><br/>- path<br/>- method<br/>- query<br/>- body<br/>- requiresAuth"]
 
-    APIEndpoint -->|conforma a| EndpointProtocol
+    APIEndpoint -->|준수| EndpointProtocol
 ```
 
-## 🚀 Uso Básico
+## 🚀 기본 사용법
 
-### 1. Definir una API y Endpoints
+### 1. API와 엔드포인트 정의
 
 ``` swift
 import GentleNetworking
@@ -183,7 +183,7 @@ nonisolated enum APIEndpoint: EndpointProtocol {
 
 ---
 
-### 2. Crear un Network Service
+### 2. 네트워크 서비스 생성
 
 ``` swift
 let networkService = HTTPNetworkService()
@@ -191,9 +191,9 @@ let networkService = HTTPNetworkService()
 
 ---
 
-### 3. Autenticarse si es Necesario
+### 3. 필요시 인증
 
-`SystemKeyChainAuthService` es la implementación integrada de `AuthServiceProtocol`. Almacena un token Bearer en el keychain del sistema y lo adjunta automáticamente a las peticiones de endpoints donde `requiresAuth` es `true`.
+`SystemKeyChainAuthService`는 `AuthServiceProtocol`의 내장 구현입니다. 시스템 키체인에 Bearer 토큰을 저장하고, `requiresAuth`가 `true`인 엔드포인트 요청에 자동으로 토큰을 첨부합니다.
 
 ``` swift
 let keyChainAuthService = SystemKeyChainAuthService()
@@ -213,9 +213,9 @@ try await keyChainAuthService.saveAccessToken(
 ```
 
 ---
-### 4. Solicitar un Modelo
+### 4. 모델 요청
 
-Usa `request` para decodificar un único objeto de la respuesta:
+`request`를 사용하여 응답에서 단일 객체를 디코딩합니다:
 
 ``` swift
 struct Model: Decodable, Sendable {
@@ -230,9 +230,9 @@ let model: Model = try await networkService.request(
 ```
 
 ---
-### 5. Solicitar un Array de Modelos
+### 5. 모델 배열 요청
 
-Usa `requestModels` para decodificar un array de objetos de la respuesta:
+`requestModels`를 사용하여 응답에서 객체 배열을 디코딩합니다:
 
 ``` swift
 let models: [Model] = try await networkService.requestModels(
@@ -243,13 +243,13 @@ let models: [Model] = try await networkService.requestModels(
 
 ---
 
-## 🧪 Testing
+## 🧪 테스트
 
-GentleNetworking proporciona una abstracción en la capa de transporte para facilitar el mocking en tests.
+GentleNetworking은 테스트에서 Mock을 쉽게 할 수 있도록 전송 계층 추상화를 제공합니다.
 
 ### CannedResponseTransport
 
-Retorna una respuesta fija para cualquier petición:
+모든 요청에 대해 고정된 응답을 반환합니다:
 
 ``` swift
 let transport = CannedResponseTransport(
@@ -262,7 +262,7 @@ let networkService = HTTPNetworkService(transport: transport)
 
 ### CannedRoutesTransport
 
-Asocia peticiones por método y patrón de ruta para escenarios de test más realistas:
+보다 현실적인 테스트 시나리오를 위해 메서드와 경로 패턴으로 요청을 매칭합니다:
 
 ``` swift
 let transport = CannedRoutesTransport(routes: [
@@ -281,37 +281,37 @@ let networkService = HTTPNetworkService(transport: transport)
 
 ---
 
-## 🧭 Filosofía de Diseño
+## 🧭 설계 철학
 
-GentleNetworking está construido alrededor de:
+GentleNetworking은 다음을 중심으로 구축되었습니다:
 
-- ✅ Predictibilidad sobre magia
-- ✅ Diseño basado en protocolos
-- ✅ Inyección de dependencias explícita
-- ✅ Concurrencia moderna de Swift
-- ✅ Testeabilidad por defecto
-- ✅ Superficie de API pequeña con garantías sólidas
+- ✅ 마법보다 예측 가능성
+- ✅ 프로토콜 기반 설계
+- ✅ 명시적 의존성 주입
+- ✅ 현대적인 Swift 동시성
+- ✅ 기본적으로 테스트 가능
+- ✅ 강력한 보증을 갖춘 작은 API 표면
 
-Es intencionalmente mínimo y evita sobre-abstraer u ocultar el comportamiento de networking.
-
----
-
-## 🤖 Nota sobre Herramientas
-
-Partes de la redacción y el refinamiento editorial en este repositorio fueron acelerados usando modelos de lenguaje grandes (incluyendo ChatGPT, Claude y Gemini) bajo diseño humano directo, validación y aprobación final. Todas las decisiones técnicas, código y conclusiones arquitectónicas son autoría y están verificadas por el mantenedor del repositorio.
+의도적으로 최소한을 유지하며, 네트워킹 동작을 과도하게 추상화하거나 숨기는 것을 피합니다.
 
 ---
 
-## 🔐 Licencia
+## 🤖 도구 관련 참고
 
-Licencia MIT
-Libre para uso personal y comercial.
+이 저장소의 초안 작성 및 편집 개선의 일부는 대규모 언어 모델(ChatGPT, Claude, Gemini 포함)을 사용하여 가속되었으며, 직접적인 인간 설계, 검증 및 최종 승인 하에 이루어졌습니다. 모든 기술적 결정, 코드, 아키텍처 결론은 저장소 관리자가 작성하고 검증했습니다.
 
 ---
 
-## 👤 Autor
+## 🔐 라이선스
 
-Creado por **Jonathan Ritchey**
+MIT 라이선스
+개인 및 상업적 용도로 무료로 사용할 수 있습니다.
+
+---
+
+## 👤 저자
+
+**Jonathan Ritchey** 제작
 Gentle Giraffe Apps
 Senior iOS Engineer --- Swift | SwiftUI | Concurrency
 
