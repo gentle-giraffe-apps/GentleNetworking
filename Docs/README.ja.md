@@ -2,7 +2,7 @@
 
 `async/await`、クリーンアーキテクチャ、テスト可能な抽象化を使用した、モダンなiOSアプリ向けの軽量でSwift 6対応のネットワーキングライブラリです。
 
-> 🌍 **言語** · [English](../README.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md) · 日本語
+> 🌍 **言語** · [English](../README.md) · [Español](README.es.md) · [Português (Brasil)](README.pt-BR.md) · 日本語 · [简体中文](README.zh-CN.md) · [한국어](README.ko.md) · [Русский](README.ru.md)
 
 [![Build](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gentle-giraffe-apps/GentleNetworking/actions/workflows/ci.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking/branch/main/graph/badge.svg)](https://codecov.io/gh/gentle-giraffe-apps/GentleNetworking)
