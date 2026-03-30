@@ -275,10 +275,32 @@ Pairs a `RequestPattern` with a `CannedResponse` for use in `CannedRoutesTranspo
 case get = "GET", post = "POST", put = "PUT", delete = "DELETE", patch = "PATCH"
 ```
 
-### NetworkError : Error
+### NetworkError : Error, Sendable
 ```swift
 case invalidResponseType
-case invalidStatusCode(Int?)
+case httpStatusError(HTTPStatusError)
+```
+
+### HTTPStatusError : Error, Sendable, Equatable
+```swift
+case unauthorized          // 401
+case forbidden             // 403
+case notFound              // 404
+case rateLimited           // 429
+case internalServerError   // 500
+case serviceUnavailable    // 503
+case clientError(Int)      // 400-499 not named above
+case serverError(Int)      // 500-599 not named above
+case redirect(Int)         // 300-399
+```
+
+Factory initializer and status code accessor:
+```swift
+/// Returns nil for 200-299 success codes
+public init?(statusCode: Int)
+
+/// The raw HTTP status code for any case
+public var statusCode: Int { get }
 ```
 
 ### ServerTrustError : Error, Sendable

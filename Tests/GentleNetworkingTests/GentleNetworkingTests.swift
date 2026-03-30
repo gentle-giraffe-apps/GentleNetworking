@@ -732,21 +732,12 @@ struct MockNetworkServiceTests {
 
 @Suite("NetworkError")
 struct NetworkErrorTests {
-    @Test("stores status code")
-    func storesStatusCode() async throws {
-        let error = NetworkError.invalidStatusCode(404)
-        if case .invalidStatusCode(let code) = error {
-            #expect(code == 404)
-        } else {
-            Issue.record("Wrong error case")
-        }
-    }
-
-    @Test("can be nil")
-    func canBeNil() async throws {
-        let error = NetworkError.invalidStatusCode(nil)
-        if case .invalidStatusCode(let code) = error {
-            #expect(code == nil)
+    @Test("wraps HTTPStatusError")
+    func wrapsHTTPStatusError() async throws {
+        let error = NetworkError.httpStatusError(.notFound)
+        if case .httpStatusError(let statusError) = error {
+            #expect(statusError == .notFound)
+            #expect(statusError.statusCode == 404)
         } else {
             Issue.record("Wrong error case")
         }
@@ -754,8 +745,110 @@ struct NetworkErrorTests {
 
     @Test("conforms to Error")
     func conformsToError() async throws {
-        let error: Error = NetworkError.invalidStatusCode(500)
+        let error: Error = NetworkError.httpStatusError(.internalServerError)
         #expect(error is NetworkError)
+    }
+}
+
+// MARK: - HTTPStatusError Tests
+
+@Suite("HTTPStatusError")
+struct HTTPStatusErrorTests {
+    @Test("maps 401 to unauthorized")
+    func maps401() {
+        #expect(HTTPStatusError(statusCode: 401) == .unauthorized)
+    }
+
+    @Test("maps 403 to forbidden")
+    func maps403() {
+        #expect(HTTPStatusError(statusCode: 403) == .forbidden)
+    }
+
+    @Test("maps 404 to notFound")
+    func maps404() {
+        #expect(HTTPStatusError(statusCode: 404) == .notFound)
+    }
+
+    @Test("maps 429 to rateLimited")
+    func maps429() {
+        #expect(HTTPStatusError(statusCode: 429) == .rateLimited)
+    }
+
+    @Test("maps 500 to internalServerError")
+    func maps500() {
+        #expect(HTTPStatusError(statusCode: 500) == .internalServerError)
+    }
+
+    @Test("maps 503 to serviceUnavailable")
+    func maps503() {
+        #expect(HTTPStatusError(statusCode: 503) == .serviceUnavailable)
+    }
+
+    @Test("maps 302 to redirect")
+    func maps302() {
+        #expect(HTTPStatusError(statusCode: 302) == .redirect(302))
+    }
+
+    @Test("maps 418 to clientError")
+    func maps418() {
+        #expect(HTTPStatusError(statusCode: 418) == .clientError(418))
+    }
+
+    @Test("maps 502 to serverError")
+    func maps502() {
+        #expect(HTTPStatusError(statusCode: 502) == .serverError(502))
+    }
+
+    @Test("maps unknown code above 599 to serverError")
+    func mapsUnknownCode() {
+        #expect(HTTPStatusError(statusCode: 600) == .serverError(600))
+    }
+
+    @Test("returns nil for 200")
+    func returnsNilFor200() {
+        #expect(HTTPStatusError(statusCode: 200) == nil)
+    }
+
+    @Test("returns nil for 299")
+    func returnsNilFor299() {
+        #expect(HTTPStatusError(statusCode: 299) == nil)
+    }
+
+    @Test("statusCode round-trips for all named cases")
+    func statusCodeRoundTrips() {
+        let cases: [(HTTPStatusError, Int)] = [
+            (.unauthorized, 401),
+            (.forbidden, 403),
+            (.notFound, 404),
+            (.rateLimited, 429),
+            (.internalServerError, 500),
+            (.serviceUnavailable, 503),
+            (.clientError(400), 400),
+            (.serverError(502), 502),
+            (.redirect(301), 301),
+        ]
+        for (error, expected) in cases {
+            #expect(error.statusCode == expected)
+        }
+    }
+
+    @Test("conforms to Error")
+    func conformsToError() {
+        let error: Error = HTTPStatusError.notFound
+        #expect(error is HTTPStatusError)
+    }
+
+    @Test("conforms to Sendable")
+    func conformsToSendable() {
+        let error: any Sendable = HTTPStatusError.unauthorized
+        _ = error
+    }
+
+    @Test("conforms to Equatable")
+    func conformsToEquatable() {
+        #expect(HTTPStatusError.notFound == HTTPStatusError.notFound)
+        #expect(HTTPStatusError.clientError(400) == HTTPStatusError.clientError(400))
+        #expect(HTTPStatusError.notFound != HTTPStatusError.forbidden)
     }
 }
 
@@ -947,8 +1040,9 @@ struct HTTPNetworkServiceTests {
             let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
             Issue.record("Should have thrown")
         } catch let error as NetworkError {
-            if case .invalidStatusCode(let code) = error {
-                #expect(code == 404)
+            if case .httpStatusError(let statusError) = error {
+                #expect(statusError == .notFound)
+                #expect(statusError.statusCode == 404)
             } else {
                 Issue.record("Wrong error case")
             }
@@ -978,8 +1072,11 @@ struct HTTPNetworkServiceTests {
             let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
             Issue.record("Should have thrown")
         } catch let error as NetworkError {
-            if case .invalidStatusCode(let code) = error {
-                #expect(code == 500)
+            if case .httpStatusError(let statusError) = error {
+                #expect(statusError == .internalServerError)
+                #expect(statusError.statusCode == 500)
+            } else {
+                Issue.record("Wrong error case")
             }
         } catch {
             Issue.record("Wrong error type")
@@ -1128,8 +1225,9 @@ struct HTTPNetworkServiceTests {
             let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
             Issue.record("Should have thrown")
         } catch let error as NetworkError {
-            if case .invalidStatusCode(let code) = error {
-                #expect(code == 401)
+            if case .httpStatusError(let statusError) = error {
+                #expect(statusError == .unauthorized)
+                #expect(statusError.statusCode == 401)
             } else {
                 Issue.record("Wrong error case")
             }
@@ -1209,8 +1307,9 @@ struct HTTPNetworkServiceTests {
             let _: TestUser = try await service.request(to: testEndpoint, via: testEnvironment)
             Issue.record("Should have thrown")
         } catch let error as NetworkError {
-            if case .invalidStatusCode(let code) = error {
-                #expect(code == 300)
+            if case .httpStatusError(let statusError) = error {
+                #expect(statusError == .redirect(300))
+                #expect(statusError.statusCode == 300)
             } else {
                 Issue.record("Wrong error case")
             }

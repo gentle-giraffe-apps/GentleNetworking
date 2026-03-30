@@ -53,7 +53,8 @@ struct HTTPMethodTests {
 | `DateDecodingStrategiesTests` | Standard ISO8601, fractional, invalid, fallback |
 | `DateEncodingStrategiesTests` | Fractional seconds encoding |
 | `MockNetworkServiceTests` | Decode single/array, void, delay, error, custom decoder |
-| `NetworkErrorTests` | Status code storage, nil, Error conformance |
+| `NetworkErrorTests` | httpStatusError wrapping, Error conformance |
+| `HTTPStatusErrorTests` | Status code mapping, round-trips, named cases, catch-alls, Equatable |
 | `NetworkServiceEmptyResponseResultTests` | Success code storage |
 | `HTTPNetworkServiceTests` | Full integration via MockURLProtocol (`.serialized`) |
 | `RequestPatternTests` | Method/host/path matching, regex, literal escaping |
