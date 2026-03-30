@@ -1928,21 +1928,20 @@ private final class SequenceTransport: HTTPTransportProtocol, @unchecked Sendabl
     }
 }
 
-private func makeResponse(url: URL, statusCode: Int) -> HTTPURLResponse {
-    HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: "HTTP/1.1", headerFields: nil)!
+private func makeResponse(url: URL, statusCode: Int) throws -> HTTPURLResponse {
+    try #require(HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: "HTTP/1.1", headerFields: nil))
 }
 
 @Suite("RetryTransport")
 struct RetryTransportTests {
 
-    let testURL = URL(string: "https://api.example.com/test")!
-
     @Test("succeeds on first attempt without retrying")
     func noRetryOnSuccess() async throws {
-        let response = makeResponse(url: testURL, statusCode: 200)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let response = try makeResponse(url: url, statusCode: 200)
         let inner = SequenceTransport(responses: [(Data("ok".utf8), response)])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (data, resp) = try await transport.data(for: request)
         #expect(String(data: data, encoding: .utf8) == "ok")
@@ -1952,14 +1951,15 @@ struct RetryTransportTests {
 
     @Test("retries on 500 and succeeds")
     func retriesOnServerError() async throws {
-        let fail = makeResponse(url: testURL, statusCode: 500)
-        let ok = makeResponse(url: testURL, statusCode: 200)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let fail = try makeResponse(url: url, statusCode: 500)
+        let ok = try makeResponse(url: url, statusCode: 200)
         let inner = SequenceTransport(responses: [
             (Data("err".utf8), fail),
             (Data("ok".utf8), ok)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (data, resp) = try await transport.data(for: request)
         #expect(String(data: data, encoding: .utf8) == "ok")
@@ -1969,31 +1969,33 @@ struct RetryTransportTests {
 
     @Test("retries on 503 and succeeds")
     func retriesOnServiceUnavailable() async throws {
-        let fail = makeResponse(url: testURL, statusCode: 503)
-        let ok = makeResponse(url: testURL, statusCode: 200)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let fail = try makeResponse(url: url, statusCode: 503)
+        let ok = try makeResponse(url: url, statusCode: 200)
         let inner = SequenceTransport(responses: [
             (Data("err".utf8), fail),
             (Data("err".utf8), fail),
             (Data("ok".utf8), ok)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
-        let (data, resp) = try await transport.data(for: request)
+        let (_, resp) = try await transport.data(for: request)
         #expect(resp.statusCode == 200)
         #expect(inner.callCount == 3)
     }
 
     @Test("retries on 429 rate limited")
     func retriesOnRateLimited() async throws {
-        let fail = makeResponse(url: testURL, statusCode: 429)
-        let ok = makeResponse(url: testURL, statusCode: 200)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let fail = try makeResponse(url: url, statusCode: 429)
+        let ok = try makeResponse(url: url, statusCode: 200)
         let inner = SequenceTransport(responses: [
             (Data("slow".utf8), fail),
             (Data("ok".utf8), ok)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (_, resp) = try await transport.data(for: request)
         #expect(resp.statusCode == 200)
@@ -2002,12 +2004,13 @@ struct RetryTransportTests {
 
     @Test("does not retry on 404")
     func noRetryOn404() async throws {
-        let notFound = makeResponse(url: testURL, statusCode: 404)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let notFound = try makeResponse(url: url, statusCode: 404)
         let inner = SequenceTransport(responses: [
             (Data("nope".utf8), notFound)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (_, resp) = try await transport.data(for: request)
         #expect(resp.statusCode == 404)
@@ -2016,12 +2019,13 @@ struct RetryTransportTests {
 
     @Test("does not retry on 401")
     func noRetryOn401() async throws {
-        let unauth = makeResponse(url: testURL, statusCode: 401)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let unauth = try makeResponse(url: url, statusCode: 401)
         let inner = SequenceTransport(responses: [
             (Data("unauth".utf8), unauth)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (_, resp) = try await transport.data(for: request)
         #expect(resp.statusCode == 401)
@@ -2030,7 +2034,8 @@ struct RetryTransportTests {
 
     @Test("exhausts retries and returns last server error response")
     func exhaustsRetries() async throws {
-        let fail = makeResponse(url: testURL, statusCode: 500)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let fail = try makeResponse(url: url, statusCode: 500)
         let inner = SequenceTransport(responses: [
             (Data("err".utf8), fail),
             (Data("err".utf8), fail),
@@ -2038,7 +2043,7 @@ struct RetryTransportTests {
             (Data("err".utf8), fail)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (_, resp) = try await transport.data(for: request)
         #expect(resp.statusCode == 500)
@@ -2047,7 +2052,8 @@ struct RetryTransportTests {
 
     @Test("retries on network-level error and succeeds")
     func retriesOnNetworkError() async throws {
-        let ok = makeResponse(url: testURL, statusCode: 200)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let ok = try makeResponse(url: url, statusCode: 200)
         let networkErr = URLError(.notConnectedToInternet)
         let inner = SequenceTransport(
             responses: [
@@ -2057,7 +2063,7 @@ struct RetryTransportTests {
             errors: [networkErr, nil]
         )
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (data, resp) = try await transport.data(for: request)
         #expect(String(data: data, encoding: .utf8) == "ok")
@@ -2067,12 +2073,13 @@ struct RetryTransportTests {
 
     @Test("respects maxRetries of zero")
     func zeroRetries() async throws {
-        let fail = makeResponse(url: testURL, statusCode: 500)
+        let url = try #require(URL(string: "https://api.example.com/test"))
+        let fail = try makeResponse(url: url, statusCode: 500)
         let inner = SequenceTransport(responses: [
             (Data("err".utf8), fail)
         ])
         let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 0, baseDelay: 0.01))
-        let request = URLRequest(url: testURL)
+        let request = URLRequest(url: url)
 
         let (_, resp) = try await transport.data(for: request)
         #expect(resp.statusCode == 500)

@@ -95,7 +95,9 @@ public struct RetryTransport: HTTPTransportProtocol {
                     return (data, response)
                 }
 
-                let statusError = HTTPStatusError(statusCode: response.statusCode)!
+                guard let statusError = HTTPStatusError(statusCode: response.statusCode) else {
+                    return (data, response)
+                }
                 let wrappedError = NetworkError.httpStatusError(statusError)
 
                 guard attempt < policy.maxRetries,
@@ -117,6 +119,7 @@ public struct RetryTransport: HTTPTransportProtocol {
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
 
-        throw lastError!
+        if let lastError { throw lastError }
+        return try await inner.data(for: request)
     }
 }
