@@ -25,6 +25,8 @@ Uma biblioteca de networking leve, pronta para Swift 6, projetada para apps iOS 
 - ✅ Projetada para MVVM / Clean Architecture
 - ✅ Zero dependências de terceiros
 - ✅ Transports com respostas predefinidas para testes
+- ✅ Retry com backoff exponencial e jitter
+- ✅ Renovação de tokens e re-autenticação transparente
 
 💬 **[Participe da discussão. Feedback e perguntas são bem-vindos](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -318,6 +320,59 @@ let service = HTTPNetworkService(
 Domínios sem pinning utilizam a validação padrão do ATS. Implemente `ServerTrustEvaluator` para lógica de confiança personalizada.
 
 Consulte [SECURITY.md](SECURITY.md) para o guia completo incluindo melhores práticas, avaliadores personalizados e abordagens alternativas.
+
+---
+
+## 🔄 Retry e Re-Autenticação
+
+GentleNetworking fornece wrappers de transporte combináveis para lógica de retry e renovação automática de tokens. Por serem transports, eles se empilham entre si e com `PinningTransport`.
+
+### RetryTransport
+
+Repete requisições que falharam com backoff exponencial e jitter configurável. Por padrão, repete em 429, 500, 503 e erros de rede — nunca em 401 ou outros erros de cliente.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: RetryTransport(
+        inner: URLSessionTransport(session: .shared),
+        policy: RetryPolicy(
+            maxRetries: 3,
+            baseDelay: 0.5,
+            maxDelay: 30.0,
+            jitter: .full       // .full | .equal | .decorrelated
+        )
+    )
+)
+```
+
+### ReauthTransport
+
+Intercepta respostas HTTP 401, renova o token via closure fornecido, re-autoriza a requisição original e a repete uma vez. 401s concorrentes são serializados para que apenas uma renovação ocorra.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ReauthTransport(
+        inner: RetryTransport(),
+        authService: keyChainAuthService,
+        refreshToken: {
+            // 1. Call your refresh endpoint to obtain a new access credential
+            // 2. Save the new credential via authService so future requests use it
+        }
+    )
+)
+```
+
+### Ordem de Empilhamento
+
+Coloque `ReauthTransport` no **exterior** e `RetryTransport` no **interior**:
+
+```
+ReauthTransport          ← captura 401 após esgotar os retries
+  └─ RetryTransport      ← repete 429/500/503 com backoff + jitter
+       └─ URLSessionTransport (ou PinningTransport)
+```
+
+`RetryTransport` já ignora 401 (`defaultShouldRetry` retorna `false`), então passa falhas de autenticação diretamente para `ReauthTransport` sem desperdiçar retries.
 
 ---
 

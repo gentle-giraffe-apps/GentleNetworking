@@ -28,7 +28,9 @@ GentleNetworking/
 │       ├── CannedRoutesTransport.swift    # Multi-route transport with match modes
 │       ├── HTTPTransportProtocol.swift    # HTTPTransportProtocol (single method)
 │       ├── MatchingTransport.swift        # Pattern-guarded transport wrapper
+│       ├── ReauthTransport.swift          # 401 intercept → refresh token → retry once
 │       ├── RequestPattern.swift           # Regex-based request matching
+│       ├── RetryTransport.swift           # Exponential backoff with jitter
 │       └── URLSessionTransport.swift      # URLSession adapter
 ├── Tests/GentleNetworkingTests/
 │   └── GentleNetworkingTests.swift        # 111 tests using Swift Testing framework
@@ -45,7 +47,7 @@ GentleNetworking/
     └── fastlane/Fastfile                  # build, package_tests, coverage_xml lanes
 ```
 
-**18 source files, 1 test file (111 tests), 1 demo app**
+**20 source files, 1 test file, 1 demo app**
 
 ## Layer Summary
 
@@ -69,6 +71,8 @@ GentleNetworking/
 ┌──────────────────────▼──────────────────────────┐
 │  Transport                                       │
 │  URLSessionTransport        (production)         │
+│  RetryTransport             (backoff + jitter)    │
+│  ReauthTransport            (401 → refresh)       │
 │  CannedResponseTransport    (single response)    │
 │  CannedRoutesTransport      (multi-route)        │
 │  MatchingTransport          (pattern guard)       │
@@ -83,6 +87,8 @@ GentleNetworking/
 HTTPNetworkService
 ├── HTTPTransportProtocol
 │   ├── URLSessionTransport          (URLSession.shared)
+│   ├── RetryTransport               (RetryPolicy, any HTTPTransportProtocol)
+│   ├── ReauthTransport              (AuthServiceProtocol, any HTTPTransportProtocol)
 │   ├── CannedResponseTransport      (CannedResponse)
 │   ├── CannedRoutesTransport        (CannedRoute, RequestPattern, CannedResponse)
 │   └── MatchingTransport            (RequestPattern, any HTTPTransportProtocol)
