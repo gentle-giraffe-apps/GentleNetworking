@@ -281,6 +281,46 @@ let networkService = HTTPNetworkService(transport: transport)
 
 ---
 
+## 🔒 安全
+
+GentleNetworking 依赖 Apple 的 App Transport Security (ATS) 提供传输层保护 — TLS 1.2+、证书验证、前向保密 — 全部由操作系统强制执行，默认启用。
+
+### SSL 证书固定
+
+对于有较高安全要求的应用，可使用内置的 `PinningTransport` 进行公钥固定或证书固定：
+
+``` swift
+import CryptoKit
+
+// 公钥固定（推荐 — 证书续期后仍然有效）
+let service = HTTPNetworkService(
+    transport: PinningTransport(
+        pinnedDomains: [
+            "api.example.com": PublicKeyPinningEvaluator(
+                pinnedKeyHashes: [primaryKeyHash, backupKeyHash]
+            )
+        ]
+    )
+)
+
+// 证书固定（更简单，但每次证书续期都会失效）
+let service = HTTPNetworkService(
+    transport: PinningTransport(
+        pinnedDomains: [
+            "api.example.com": CertificatePinningEvaluator(
+                pinnedCertificates: [certDERData]
+            )
+        ]
+    )
+)
+```
+
+未固定的域名将使用标准 ATS 验证。实现 `ServerTrustEvaluator` 可自定义信任逻辑。
+
+完整指南请参阅 [SECURITY.md](SECURITY.md)，包括最佳实践、自定义评估器和替代方案。
+
+---
+
 ## 🧭 设计理念
 
 GentleNetworking 围绕以下原则构建：

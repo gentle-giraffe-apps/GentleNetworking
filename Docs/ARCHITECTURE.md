@@ -110,6 +110,10 @@ MockKeyChainStore                    (standalone actor, implements KeyChainStore
 | `HTTPTransportProtocol` | Swap transports for testing or custom networking |
 | `MockNetworkService` | Drop-in replacement for UI previews and unit tests |
 
+## Security
+
+The default `URLSessionTransport` uses `URLSession.shared`, which inherits iOS App Transport Security (TLS 1.2+, system trust store, forward secrecy). No built-in certificate pinning — consumers who need pinning inject a custom `URLSession` with a pinning delegate into `URLSessionTransport(session:)`, or implement `HTTPTransportProtocol` directly. See [SECURITY.md](SECURITY.md) for details.
+
 ## Imports
 
 Every source file imports only `Foundation`. Two files additionally import `Security`:

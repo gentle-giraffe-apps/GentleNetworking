@@ -1663,3 +1663,147 @@ struct CustomEndpointTests {
     }
 }
 
+// MARK: - SSL Pinning
+
+private struct SucceedingEvaluator: ServerTrustEvaluator {
+    func evaluate(_ trust: SecTrust, forHost host: String) throws {
+        // Always succeeds
+    }
+}
+
+private struct FailingEvaluator: ServerTrustEvaluator {
+    func evaluate(_ trust: SecTrust, forHost host: String) throws {
+        throw ServerTrustError.certificatePinningFailed(host: host)
+    }
+}
+
+@Suite("ServerTrustError")
+struct ServerTrustErrorTests {
+
+    @Test("trustEvaluationFailed is an Error")
+    func trustEvaluationFailed() {
+        let error: any Error = ServerTrustError.trustEvaluationFailed
+        #expect(error is ServerTrustError)
+    }
+
+    @Test("noCertificateFound is an Error")
+    func noCertificateFound() {
+        let error: any Error = ServerTrustError.noCertificateFound
+        #expect(error is ServerTrustError)
+    }
+
+    @Test("noPublicKeyFound is an Error")
+    func noPublicKeyFound() {
+        let error: any Error = ServerTrustError.noPublicKeyFound
+        #expect(error is ServerTrustError)
+    }
+
+    @Test("certificatePinningFailed stores host")
+    func certificatePinningFailedHost() {
+        let error = ServerTrustError.certificatePinningFailed(host: "api.example.com")
+        if case .certificatePinningFailed(let host) = error {
+            #expect(host == "api.example.com")
+        } else {
+            Issue.record("Wrong error case")
+        }
+    }
+}
+
+@Suite("PublicKeyPinningEvaluator")
+struct PublicKeyPinningEvaluatorTests {
+
+    @Test("init stores pinned hashes")
+    func initStoresHashes() {
+        let hash = Data([0x01, 0x02, 0x03])
+        let evaluator = PublicKeyPinningEvaluator(pinnedKeyHashes: [hash])
+        #expect(evaluator.pinnedKeyHashes.count == 1)
+        #expect(evaluator.pinnedKeyHashes.contains(hash))
+    }
+
+    @Test("empty hashes set is valid")
+    func emptyHashes() {
+        let evaluator = PublicKeyPinningEvaluator(pinnedKeyHashes: [])
+        #expect(evaluator.pinnedKeyHashes.isEmpty)
+    }
+
+    @Test("multiple hashes are stored")
+    func multipleHashes() {
+        let hash1 = Data([0x01])
+        let hash2 = Data([0x02])
+        let evaluator = PublicKeyPinningEvaluator(pinnedKeyHashes: [hash1, hash2])
+        #expect(evaluator.pinnedKeyHashes.count == 2)
+    }
+}
+
+@Suite("CertificatePinningEvaluator")
+struct CertificatePinningEvaluatorTests {
+
+    @Test("init stores pinned certificates")
+    func initStoresCerts() {
+        let cert = Data([0xAA, 0xBB, 0xCC])
+        let evaluator = CertificatePinningEvaluator(pinnedCertificates: [cert])
+        #expect(evaluator.pinnedCertificates.count == 1)
+        #expect(evaluator.pinnedCertificates.contains(cert))
+    }
+
+    @Test("empty certificates set is valid")
+    func emptyCerts() {
+        let evaluator = CertificatePinningEvaluator(pinnedCertificates: [])
+        #expect(evaluator.pinnedCertificates.isEmpty)
+    }
+}
+
+@Suite("PinningTransport")
+struct PinningTransportTests {
+
+    @Test("conforms to HTTPTransportProtocol")
+    func conformsToProtocol() {
+        let transport: any HTTPTransportProtocol = PinningTransport(pinnedDomains: [:])
+        _ = transport
+    }
+
+    @Test("initializes with empty pinned domains")
+    func emptyDomains() {
+        _ = PinningTransport(pinnedDomains: [:])
+    }
+
+    @Test("initializes with custom configuration")
+    func customConfiguration() {
+        let config = URLSessionConfiguration.ephemeral
+        _ = PinningTransport(pinnedDomains: [:], configuration: config)
+    }
+
+    @Test("initializes with pinned domains")
+    func pinnedDomains() {
+        _ = PinningTransport(
+            pinnedDomains: ["api.example.com": SucceedingEvaluator()]
+        )
+    }
+
+    @Test("initializes with multiple pinned domains")
+    func multiplePinnedDomains() {
+        _ = PinningTransport(
+            pinnedDomains: [
+                "api.example.com": SucceedingEvaluator(),
+                "cdn.example.com": FailingEvaluator()
+            ]
+        )
+    }
+}
+
+@Suite("ServerTrustEvaluator conformance")
+struct ServerTrustEvaluatorConformanceTests {
+
+    @Test("succeeding evaluator conforms to protocol")
+    func succeedingEvaluator() {
+        let evaluator: any ServerTrustEvaluator = SucceedingEvaluator()
+        _ = evaluator
+    }
+
+    @Test("failing evaluator conforms to protocol")
+    func failingEvaluator() {
+        let evaluator: any ServerTrustEvaluator = FailingEvaluator()
+        _ = evaluator
+    }
+}
+
