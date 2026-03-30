@@ -9,7 +9,7 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
     let jsonEncoder: JSONEncoder
     
     public init(
-        transport: HTTPTransportProtocol = URLSessionTransport(session: .shared),
+        transport: HTTPTransportProtocol = RetryTransport(),
         authService: AuthServiceProtocol = SystemKeyChainAuthService(),
         invalidationHandler: TokenInvalidationHandler? = nil,
         jsonDecoder: JSONDecoder? = nil,
