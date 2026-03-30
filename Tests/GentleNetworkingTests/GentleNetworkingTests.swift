@@ -2188,10 +2188,9 @@ struct JitterStrategyTests {
 
 // MARK: - ReauthTransport Tests
 
-private actor RefreshCounter {
-    private(set) var count = 0
-    var isEmpty: Bool { count == 0 }
-    func increment() { count += 1 }
+private actor RefreshLog {
+    private(set) var entries: [Void] = []
+    func record() { entries.append(()) }
 }
 
 @Suite("ReauthTransport")
@@ -2202,19 +2201,19 @@ struct ReauthTransportTests {
         let url = try #require(URL(string: "https://api.example.com/data"))
         let ok = try makeResponse(url: url, statusCode: 200)
         let inner = SequenceTransport(responses: [(Data("ok".utf8), ok)])
-        let counter = RefreshCounter()
+        let counter = RefreshLog()
 
         let transport = ReauthTransport(
             inner: inner,
             authService: MockAuthService(),
-            refreshToken: { await counter.increment() }
+            refreshToken: { await counter.record() }
         )
 
         let (data, resp) = try await transport.data(for: URLRequest(url: url))
         #expect(String(data: data, encoding: .utf8) == "ok")
         #expect(resp.statusCode == 200)
         #expect(inner.callCount == 1)
-        #expect(await counter.isEmpty)
+        #expect(await counter.entries.isEmpty)
     }
 
     @Test("passes through non-401 errors unchanged")
@@ -2222,18 +2221,18 @@ struct ReauthTransportTests {
         let url = try #require(URL(string: "https://api.example.com/data"))
         let notFound = try makeResponse(url: url, statusCode: 404)
         let inner = SequenceTransport(responses: [(Data("nope".utf8), notFound)])
-        let counter = RefreshCounter()
+        let counter = RefreshLog()
 
         let transport = ReauthTransport(
             inner: inner,
             authService: MockAuthService(),
-            refreshToken: { await counter.increment() }
+            refreshToken: { await counter.record() }
         )
 
         let (_, resp) = try await transport.data(for: URLRequest(url: url))
         #expect(resp.statusCode == 404)
         #expect(inner.callCount == 1)
-        #expect(await counter.isEmpty)
+        #expect(await counter.entries.isEmpty)
     }
 
     @Test("refreshes token and retries on 401")
@@ -2245,19 +2244,19 @@ struct ReauthTransportTests {
             (Data("unauth".utf8), unauth),
             (Data("ok".utf8), ok)
         ])
-        let counter = RefreshCounter()
+        let counter = RefreshLog()
 
         let transport = ReauthTransport(
             inner: inner,
             authService: MockAuthService(),
-            refreshToken: { await counter.increment() }
+            refreshToken: { await counter.record() }
         )
 
         let (data, resp) = try await transport.data(for: URLRequest(url: url))
         #expect(String(data: data, encoding: .utf8) == "ok")
         #expect(resp.statusCode == 200)
         #expect(inner.callCount == 2)
-        #expect(await counter.count == 1)
+        #expect(await counter.entries.count == 1)
     }
 
     @Test("propagates refresh failure")
@@ -2287,18 +2286,18 @@ struct ReauthTransportTests {
             (Data("unauth".utf8), unauth),
             (Data("still unauth".utf8), unauth)
         ])
-        let counter = RefreshCounter()
+        let counter = RefreshLog()
 
         let transport = ReauthTransport(
             inner: inner,
             authService: MockAuthService(),
-            refreshToken: { await counter.increment() }
+            refreshToken: { await counter.record() }
         )
 
         let (_, resp) = try await transport.data(for: URLRequest(url: url))
         #expect(resp.statusCode == 401)
         #expect(inner.callCount == 2)
-        #expect(await counter.count == 1)
+        #expect(await counter.entries.count == 1)
     }
 
     @Test("composes with RetryTransport")
@@ -2312,18 +2311,18 @@ struct ReauthTransportTests {
             (Data("err".utf8), serverErr),
             (Data("ok".utf8), ok)
         ])
-        let counter = RefreshCounter()
+        let counter = RefreshLog()
 
         let transport = ReauthTransport(
             inner: RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 2, baseDelay: 0.01)),
             authService: MockAuthService(),
-            refreshToken: { await counter.increment() }
+            refreshToken: { await counter.record() }
         )
 
         let (data, resp) = try await transport.data(for: URLRequest(url: url))
         #expect(String(data: data, encoding: .utf8) == "ok")
         #expect(resp.statusCode == 200)
-        #expect(await counter.count == 1)
+        #expect(await counter.entries.count == 1)
         // call 1: 401 (RetryTransport passes through), call 2: 500 (RetryTransport retries), call 3: 200
         #expect(inner.callCount == 3)
     }
