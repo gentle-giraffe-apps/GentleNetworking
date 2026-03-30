@@ -25,6 +25,8 @@ Una biblioteca de networking ligera, lista para Swift 6, diseñada para apps iOS
 - ✅ Diseñada para MVVM / Clean Architecture
 - ✅ Sin dependencias de terceros
 - ✅ Transports con respuestas predefinidas para testing
+- ✅ Reintentos con backoff exponencial y jitter
+- ✅ Renovación de tokens y re-autenticación transparente
 
 💬 **[Únete a la discusión. Comentarios y preguntas son bienvenidos](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -318,6 +320,62 @@ let service = HTTPNetworkService(
 Los dominios sin fijación utilizan la validación estándar de ATS. Implementa `ServerTrustEvaluator` para lógica de confianza personalizada.
 
 Consulta [SECURITY.md](SECURITY.md) para la guía completa incluyendo mejores prácticas, evaluadores personalizados y enfoques alternativos.
+
+---
+
+## 🔄 Reintentos y Re-Autenticación
+
+GentleNetworking proporciona wrappers de transporte componibles para la lógica de reintentos y la renovación automática de tokens. Al ser transports, se apilan entre sí y con `PinningTransport`.
+
+### RetryTransport
+
+Reintenta peticiones fallidas con backoff exponencial y jitter configurable. Por defecto reintenta en 429, 500, 503 y errores de red — nunca en 401 u otros errores de cliente.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: RetryTransport(
+        inner: URLSessionTransport(session: .shared),
+        policy: RetryPolicy(
+            maxRetries: 3,
+            baseDelay: 0.5,
+            maxDelay: 30.0,
+            jitter: .full       // .full | .equal | .decorrelated
+        )
+    )
+)
+```
+
+### ReauthTransport
+
+Intercepta respuestas HTTP 401, renueva el token mediante un closure proporcionado, re-autoriza la petición original y la reintenta una vez. Los 401 concurrentes se serializan para que solo ocurra una renovación.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ReauthTransport(
+        inner: RetryTransport(),
+        authService: keyChainAuthService,
+        refreshToken: {
+            let new: TokenResponse = try await refreshService.request(
+                to: .refreshToken(token: currentRefreshToken),
+                via: apiEnvironment
+            )
+            try await keyChainAuthService.saveAccessToken(new.accessToken)
+        }
+    )
+)
+```
+
+### Orden de Apilamiento
+
+Coloca `ReauthTransport` en el **exterior** y `RetryTransport` en el **interior**:
+
+```
+ReauthTransport          ← captura 401 después de agotar los reintentos
+  └─ RetryTransport      ← reintenta 429/500/503 con backoff + jitter
+       └─ URLSessionTransport (o PinningTransport)
+```
+
+`RetryTransport` ya omite el 401 (`defaultShouldRetry` devuelve `false`), por lo que pasa los fallos de autenticación directamente a `ReauthTransport` sin desperdiciar reintentos.
 
 ---
 

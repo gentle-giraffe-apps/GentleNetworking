@@ -25,6 +25,8 @@
 - ✅ 为 MVVM / Clean Architecture 设计
 - ✅ 零第三方依赖
 - ✅ 内置预设响应 Transport，方便测试
+- ✅ 指数退避和抖动的重试机制
+- ✅ 透明的令牌刷新和重新认证
 
 💬 **[加入讨论。欢迎反馈和提问](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -318,6 +320,62 @@ let service = HTTPNetworkService(
 未固定的域名将使用标准 ATS 验证。实现 `ServerTrustEvaluator` 可自定义信任逻辑。
 
 完整指南请参阅 [SECURITY.md](SECURITY.md)，包括最佳实践、自定义评估器和替代方案。
+
+---
+
+## 🔄 重试与重新认证
+
+GentleNetworking 提供可组合的传输层包装器，用于重试逻辑和自动令牌刷新。由于它们是 Transport，可以相互叠加，也可以与 `PinningTransport` 叠加使用。
+
+### RetryTransport
+
+使用指数退避和可配置的抖动重试失败的请求。默认在 429、500、503 和网络错误时重试 — 不会在 401 或其他客户端错误时重试。
+
+``` swift
+let service = HTTPNetworkService(
+    transport: RetryTransport(
+        inner: URLSessionTransport(session: .shared),
+        policy: RetryPolicy(
+            maxRetries: 3,
+            baseDelay: 0.5,
+            maxDelay: 30.0,
+            jitter: .full       // .full | .equal | .decorrelated
+        )
+    )
+)
+```
+
+### ReauthTransport
+
+拦截 HTTP 401 响应，通过调用方提供的闭包刷新令牌，重新授权原始请求并重试一次。并发的 401 会被序列化，确保只执行一次刷新。
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ReauthTransport(
+        inner: RetryTransport(),
+        authService: keyChainAuthService,
+        refreshToken: {
+            let new: TokenResponse = try await refreshService.request(
+                to: .refreshToken(token: currentRefreshToken),
+                via: apiEnvironment
+            )
+            try await keyChainAuthService.saveAccessToken(new.accessToken)
+        }
+    )
+)
+```
+
+### 叠加顺序
+
+将 `ReauthTransport` 放在**外层**，`RetryTransport` 放在**内层**：
+
+```
+ReauthTransport          ← 在重试耗尽后捕获 401
+  └─ RetryTransport      ← 使用退避 + 抖动重试 429/500/503
+       └─ URLSessionTransport（或 PinningTransport）
+```
+
+`RetryTransport` 已经跳过 401（`defaultShouldRetry` 返回 `false`），因此它将认证失败直接传递给 `ReauthTransport`，不会浪费重试次数。
 
 ---
 

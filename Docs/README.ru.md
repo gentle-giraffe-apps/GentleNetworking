@@ -25,6 +25,8 @@
 - ✅ Спроектирован для MVVM / Clean Architecture
 - ✅ Ноль сторонних зависимостей
 - ✅ Встроенные Transport'ы с предустановленными ответами для тестирования
+- ✅ Повторные попытки с экспоненциальной задержкой и джиттером
+- ✅ Прозрачное обновление токенов и повторная аутентификация
 
 💬 **[Присоединяйтесь к обсуждению. Обратная связь и вопросы приветствуются](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -318,6 +320,62 @@ let service = HTTPNetworkService(
 Домены без закрепления используют стандартную проверку ATS. Реализуйте `ServerTrustEvaluator` для пользовательской логики доверия.
 
 Полное руководство, включая лучшие практики, пользовательские оценщики и альтернативные подходы, см. в [SECURITY.md](SECURITY.md).
+
+---
+
+## 🔄 Повторные попытки и повторная аутентификация
+
+GentleNetworking предоставляет компонуемые обёртки транспорта для логики повторных попыток и автоматического обновления токенов. Поскольку это транспорты, они стекируются друг с другом и с `PinningTransport`.
+
+### RetryTransport
+
+Повторяет неудачные запросы с экспоненциальной задержкой и настраиваемым джиттером. По умолчанию повторяет при 429, 500, 503 и сетевых ошибках — никогда при 401 или других клиентских ошибках.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: RetryTransport(
+        inner: URLSessionTransport(session: .shared),
+        policy: RetryPolicy(
+            maxRetries: 3,
+            baseDelay: 0.5,
+            maxDelay: 30.0,
+            jitter: .full       // .full | .equal | .decorrelated
+        )
+    )
+)
+```
+
+### ReauthTransport
+
+Перехватывает ответы HTTP 401, обновляет токен через замыкание, предоставленное вызывающей стороной, повторно авторизует исходный запрос и повторяет его один раз. Параллельные 401 сериализуются, чтобы выполнялось только одно обновление.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ReauthTransport(
+        inner: RetryTransport(),
+        authService: keyChainAuthService,
+        refreshToken: {
+            let new: TokenResponse = try await refreshService.request(
+                to: .refreshToken(token: currentRefreshToken),
+                via: apiEnvironment
+            )
+            try await keyChainAuthService.saveAccessToken(new.accessToken)
+        }
+    )
+)
+```
+
+### Порядок стекирования
+
+Разместите `ReauthTransport` **снаружи**, а `RetryTransport` **внутри**:
+
+```
+ReauthTransport          ← перехватывает 401 после исчерпания попыток
+  └─ RetryTransport      ← повторяет 429/500/503 с задержкой + джиттер
+       └─ URLSessionTransport (или PinningTransport)
+```
+
+`RetryTransport` уже пропускает 401 (`defaultShouldRetry` возвращает `false`), поэтому передаёт ошибки аутентификации напрямую в `ReauthTransport`, не расходуя попытки.
 
 ---
 

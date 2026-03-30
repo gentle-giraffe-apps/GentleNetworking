@@ -25,6 +25,8 @@
 - ✅ MVVM / Clean Architecture에 맞게 설계
 - ✅ 서드파티 의존성 없음
 - ✅ 테스트를 위한 미리 정의된 응답 Transport 내장
+- ✅ 지수 백오프와 지터를 포함한 재시도
+- ✅ 투명한 토큰 갱신 및 재인증
 
 💬 **[토론에 참여하세요. 피드백과 질문을 환영합니다](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -318,6 +320,62 @@ let service = HTTPNetworkService(
 피닝이 설정되지 않은 도메인은 표준 ATS 검증을 사용합니다. 사용자 정의 신뢰 로직을 위해 `ServerTrustEvaluator`를 구현하세요.
 
 모범 사례, 사용자 정의 평가기 및 대안적 접근 방식을 포함한 전체 가이드는 [SECURITY.md](SECURITY.md)를 참조하세요.
+
+---
+
+## 🔄 재시도 및 재인증
+
+GentleNetworking은 재시도 로직과 자동 토큰 갱신을 위한 조합 가능한 트랜스포트 래퍼를 제공합니다. 트랜스포트이기 때문에 서로, 그리고 `PinningTransport`와 함께 스택할 수 있습니다.
+
+### RetryTransport
+
+지수 백오프와 구성 가능한 지터로 실패한 요청을 재시도합니다. 기본적으로 429, 500, 503 및 네트워크 오류에서 재시도하며, 401이나 기타 클라이언트 오류에서는 재시도하지 않습니다.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: RetryTransport(
+        inner: URLSessionTransport(session: .shared),
+        policy: RetryPolicy(
+            maxRetries: 3,
+            baseDelay: 0.5,
+            maxDelay: 30.0,
+            jitter: .full       // .full | .equal | .decorrelated
+        )
+    )
+)
+```
+
+### ReauthTransport
+
+HTTP 401 응답을 가로채고, 호출자가 제공한 클로저를 통해 토큰을 갱신하고, 원래 요청을 재인가하여 한 번 재시도합니다. 동시 발생하는 401은 직렬화되어 갱신이 한 번만 실행됩니다.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ReauthTransport(
+        inner: RetryTransport(),
+        authService: keyChainAuthService,
+        refreshToken: {
+            let new: TokenResponse = try await refreshService.request(
+                to: .refreshToken(token: currentRefreshToken),
+                via: apiEnvironment
+            )
+            try await keyChainAuthService.saveAccessToken(new.accessToken)
+        }
+    )
+)
+```
+
+### 스택 순서
+
+`ReauthTransport`를 **외부**에, `RetryTransport`를 **내부**에 배치합니다:
+
+```
+ReauthTransport          ← 재시도 소진 후 401을 캐치
+  └─ RetryTransport      ← 백오프 + 지터로 429/500/503 재시도
+       └─ URLSessionTransport (또는 PinningTransport)
+```
+
+`RetryTransport`는 이미 401을 건너뜁니다 (`defaultShouldRetry`가 `false`를 반환), 따라서 재시도를 낭비하지 않고 인증 실패를 `ReauthTransport`에 직접 전달합니다.
 
 ---
 

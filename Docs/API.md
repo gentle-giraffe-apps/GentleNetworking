@@ -175,6 +175,19 @@ public struct CertificatePinningEvaluator: ServerTrustEvaluator {
 ```
 Pins DER-encoded certificate bytes. Compares certificates in the chain via `SecCertificateCopyData` against the pinned set. Simpler but breaks on every certificate renewal.
 
+### ReauthTransport : HTTPTransportProtocol
+```swift
+public struct ReauthTransport: HTTPTransportProtocol {
+    public init(
+        inner: HTTPTransportProtocol = RetryTransport(),
+        authService: AuthServiceProtocol = SystemKeyChainAuthService(),
+        refreshToken: @escaping @Sendable () async throws -> Void
+    )
+    public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
+}
+```
+Intercepts HTTP 401 responses, calls the `refreshToken` closure, re-authorizes the original request via `authService`, and retries once. Concurrent 401s are serialized — only one refresh executes at a time.
+
 ### Endpoint : EndpointProtocol
 ```swift
 public struct Endpoint: EndpointProtocol {

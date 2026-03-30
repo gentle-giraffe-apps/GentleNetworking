@@ -25,6 +25,8 @@
 - ✅ MVVM / Clean Architecture 向けに設計
 - ✅ サードパーティ依存なし
 - ✅ テスト用の定型レスポンストランスポートを内蔵
+- ✅ 指数バックオフとジッターによるリトライ
+- ✅ 透過的なトークンリフレッシュと再認証
 
 💬 **[ディスカッションに参加しましょう。フィードバックや質問を歓迎します](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -318,6 +320,62 @@ let service = HTTPNetworkService(
 ピンニング未設定のドメインは標準のATS検証にフォールバックします。カスタム信頼ロジックには`ServerTrustEvaluator`を実装してください。
 
 ベストプラクティス、カスタムエバリュエーター、代替アプローチを含む完全なガイドは[SECURITY.md](SECURITY.md)を参照してください。
+
+---
+
+## 🔄 リトライと再認証
+
+GentleNetworkingは、リトライロジックと自動トークンリフレッシュのためのコンポーザブルなトランスポートラッパーを提供します。トランスポートであるため、互いに、また`PinningTransport`とスタックできます。
+
+### RetryTransport
+
+指数バックオフと設定可能なジッターで失敗したリクエストをリトライします。デフォルトでは429、500、503、ネットワークエラーでリトライし、401やその他のクライアントエラーではリトライしません。
+
+``` swift
+let service = HTTPNetworkService(
+    transport: RetryTransport(
+        inner: URLSessionTransport(session: .shared),
+        policy: RetryPolicy(
+            maxRetries: 3,
+            baseDelay: 0.5,
+            maxDelay: 30.0,
+            jitter: .full       // .full | .equal | .decorrelated
+        )
+    )
+)
+```
+
+### ReauthTransport
+
+HTTP 401レスポンスをインターセプトし、呼び出し元が提供したクロージャでトークンをリフレッシュし、元のリクエストを再認可して1回リトライします。同時発生する401はシリアライズされ、リフレッシュは1回だけ実行されます。
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ReauthTransport(
+        inner: RetryTransport(),
+        authService: keyChainAuthService,
+        refreshToken: {
+            let new: TokenResponse = try await refreshService.request(
+                to: .refreshToken(token: currentRefreshToken),
+                via: apiEnvironment
+            )
+            try await keyChainAuthService.saveAccessToken(new.accessToken)
+        }
+    )
+)
+```
+
+### スタック順序
+
+`ReauthTransport`を**外側**に、`RetryTransport`を**内側**に配置します：
+
+```
+ReauthTransport          ← リトライ消費後に401をキャッチ
+  └─ RetryTransport      ← 429/500/503をバックオフ+ジッターでリトライ
+       └─ URLSessionTransport（またはPinningTransport）
+```
+
+`RetryTransport`は401をスキップします（`defaultShouldRetry`が`false`を返す）ため、リトライを無駄にせず認証失敗を`ReauthTransport`に直接渡します。
 
 ---
 
