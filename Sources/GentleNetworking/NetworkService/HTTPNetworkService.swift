@@ -44,7 +44,8 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
     ) async throws -> NetworkServiceEmptyResponseResult {
         let (_, response) = try await getData(from: endpoint, via: environment)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw NetworkError.invalidStatusCode((response as? HTTPURLResponse)?.statusCode ?? 500)
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 500
+            throw NetworkError.httpStatusError(HTTPStatusError(statusCode: code)!)
         }
         return .success(code: http.statusCode)
     }
@@ -66,10 +67,11 @@ public struct HTTPNetworkService: NetworkServiceProtocol {
             print("🔍 Response Data (non-UTF8, \(data.count) bytes)")
         }
         guard (200..<300).contains(response.statusCode) else {
-            if response.statusCode == 401 {
+            let statusError = HTTPStatusError(statusCode: response.statusCode)!
+            if case .unauthorized = statusError {
                 await invalidationHandler?.handleInvalidToken()
             }
-            throw NetworkError.invalidStatusCode(response.statusCode)
+            throw NetworkError.httpStatusError(statusError)
         }
         return (data, response)
     }

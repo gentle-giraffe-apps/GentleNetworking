@@ -18,6 +18,7 @@ GentleNetworking/
 │   │   ├── Endpoint.swift                 # HTTPMethod, EndpointProtocol, Endpoint, EndpointAnyEncodable
 │   │   ├── HTTPNetworkService.swift       # Core service: auth, transport, decode, 401 handling
 │   │   ├── MockNetworkService.swift       # Returns canned JSON for testing
+│   │   ├── HTTPStatusError.swift           # Typed HTTP status code errors (3xx/4xx/5xx)
 │   │   ├── NetworkError.swift             # NetworkError enum
 │   │   └── NetworkServiceProtocol.swift   # NetworkServiceProtocol + NetworkServiceEmptyResponseResult
 │   ├── Persistence/
@@ -30,7 +31,7 @@ GentleNetworking/
 │       ├── RequestPattern.swift           # Regex-based request matching
 │       └── URLSessionTransport.swift      # URLSession adapter
 ├── Tests/GentleNetworkingTests/
-│   └── GentleNetworkingTests.swift        # 91 tests using Swift Testing framework
+│   └── GentleNetworkingTests.swift        # 111 tests using Swift Testing framework
 └── Demo/GentleNetworkingDemo/
     ├── GentleNetworkingDemo/
     │   ├── GentleNetworkingDemoApp.swift   # @main app entry
@@ -44,7 +45,7 @@ GentleNetworking/
     └── fastlane/Fastfile                  # build, package_tests, coverage_xml lanes
 ```
 
-**17 source files, 1 test file (91 tests), 1 demo app**
+**18 source files, 1 test file (111 tests), 1 demo app**
 
 ## Layer Summary
 

@@ -24,7 +24,7 @@
 ## Enums
 
 - **Never use `none` as a case** — use `Optional` or associated values instead
-- Use **associated values** to carry context (e.g., `invalidStatusCode(Int?)`, `ambiguousMatch(count: Int)`, `unexpectedStatus(OSStatus)`)
+- Use **associated values** to carry context (e.g., `clientError(Int)`, `ambiguousMatch(count: Int)`, `unexpectedStatus(OSStatus)`)
 - Raw-value enums for fixed string mappings (e.g., `HTTPMethod: String`)
 
 ## Access Control
