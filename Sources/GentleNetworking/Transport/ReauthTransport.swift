@@ -29,7 +29,7 @@ public struct ReauthTransport: HTTPTransportProtocol {
 private actor RefreshCoordinator {
     private var activeRefresh: Task<Void, any Error>?
 
-    func refresh(using refreshToken: @Sendable () async throws -> Void) async throws {
+    func refresh(using refreshToken: @escaping @Sendable () async throws -> Void) async throws {
         if let active = activeRefresh {
             try await active.value
             return

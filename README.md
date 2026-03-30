@@ -358,7 +358,7 @@ let service = HTTPNetworkService(
         authService: keyChainAuthService,
         refreshToken: {
             let new: TokenResponse = try await refreshService.request(
-                to: .refreshToken(token: currentRefreshToken),
+                to: .refreshToken(token: currentRefresh),
                 via: apiEnvironment
             )
             try await keyChainAuthService.saveAccessToken(new.accessToken)
