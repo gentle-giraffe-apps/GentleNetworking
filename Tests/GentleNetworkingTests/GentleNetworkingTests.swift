@@ -846,8 +846,12 @@ struct HTTPStatusErrorTests {
 
     @Test("conforms to Equatable")
     func conformsToEquatable() {
-        #expect(HTTPStatusError.notFound == HTTPStatusError.notFound)
-        #expect(HTTPStatusError.clientError(400) == HTTPStatusError.clientError(400))
+        let a: HTTPStatusError = .notFound
+        let b: HTTPStatusError = .notFound
+        #expect(a == b)
+        let c: HTTPStatusError = .clientError(400)
+        let d: HTTPStatusError = .clientError(400)
+        #expect(c == d)
         #expect(HTTPStatusError.notFound != HTTPStatusError.forbidden)
     }
 }
