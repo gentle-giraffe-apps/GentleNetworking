@@ -1906,3 +1906,276 @@ struct ServerTrustEvaluatorConformanceTests {
     }
 }
 
+// MARK: - RetryTransport Tests
+
+private final class SequenceTransport: HTTPTransportProtocol, @unchecked Sendable {
+    private var responses: [(Data, HTTPURLResponse)]
+    private var errors: [Error?]
+    private(set) var callCount = 0
+
+    init(responses: [(Data, HTTPURLResponse)], errors: [Error?]? = nil) {
+        self.responses = responses
+        self.errors = errors ?? Array(repeating: nil, count: responses.count)
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let index = callCount
+        callCount += 1
+        if let error = errors[index] {
+            throw error
+        }
+        return responses[index]
+    }
+}
+
+private func makeResponse(url: URL, statusCode: Int) -> HTTPURLResponse {
+    HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: "HTTP/1.1", headerFields: nil)!
+}
+
+@Suite("RetryTransport")
+struct RetryTransportTests {
+
+    let testURL = URL(string: "https://api.example.com/test")!
+
+    @Test("succeeds on first attempt without retrying")
+    func noRetryOnSuccess() async throws {
+        let response = makeResponse(url: testURL, statusCode: 200)
+        let inner = SequenceTransport(responses: [(Data("ok".utf8), response)])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (data, resp) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "ok")
+        #expect(resp.statusCode == 200)
+        #expect(inner.callCount == 1)
+    }
+
+    @Test("retries on 500 and succeeds")
+    func retriesOnServerError() async throws {
+        let fail = makeResponse(url: testURL, statusCode: 500)
+        let ok = makeResponse(url: testURL, statusCode: 200)
+        let inner = SequenceTransport(responses: [
+            (Data("err".utf8), fail),
+            (Data("ok".utf8), ok)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (data, resp) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "ok")
+        #expect(resp.statusCode == 200)
+        #expect(inner.callCount == 2)
+    }
+
+    @Test("retries on 503 and succeeds")
+    func retriesOnServiceUnavailable() async throws {
+        let fail = makeResponse(url: testURL, statusCode: 503)
+        let ok = makeResponse(url: testURL, statusCode: 200)
+        let inner = SequenceTransport(responses: [
+            (Data("err".utf8), fail),
+            (Data("err".utf8), fail),
+            (Data("ok".utf8), ok)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (data, resp) = try await transport.data(for: request)
+        #expect(resp.statusCode == 200)
+        #expect(inner.callCount == 3)
+    }
+
+    @Test("retries on 429 rate limited")
+    func retriesOnRateLimited() async throws {
+        let fail = makeResponse(url: testURL, statusCode: 429)
+        let ok = makeResponse(url: testURL, statusCode: 200)
+        let inner = SequenceTransport(responses: [
+            (Data("slow".utf8), fail),
+            (Data("ok".utf8), ok)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (_, resp) = try await transport.data(for: request)
+        #expect(resp.statusCode == 200)
+        #expect(inner.callCount == 2)
+    }
+
+    @Test("does not retry on 404")
+    func noRetryOn404() async throws {
+        let notFound = makeResponse(url: testURL, statusCode: 404)
+        let inner = SequenceTransport(responses: [
+            (Data("nope".utf8), notFound)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (_, resp) = try await transport.data(for: request)
+        #expect(resp.statusCode == 404)
+        #expect(inner.callCount == 1)
+    }
+
+    @Test("does not retry on 401")
+    func noRetryOn401() async throws {
+        let unauth = makeResponse(url: testURL, statusCode: 401)
+        let inner = SequenceTransport(responses: [
+            (Data("unauth".utf8), unauth)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (_, resp) = try await transport.data(for: request)
+        #expect(resp.statusCode == 401)
+        #expect(inner.callCount == 1)
+    }
+
+    @Test("exhausts retries and returns last server error response")
+    func exhaustsRetries() async throws {
+        let fail = makeResponse(url: testURL, statusCode: 500)
+        let inner = SequenceTransport(responses: [
+            (Data("err".utf8), fail),
+            (Data("err".utf8), fail),
+            (Data("err".utf8), fail),
+            (Data("err".utf8), fail)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (_, resp) = try await transport.data(for: request)
+        #expect(resp.statusCode == 500)
+        #expect(inner.callCount == 4) // 1 initial + 3 retries
+    }
+
+    @Test("retries on network-level error and succeeds")
+    func retriesOnNetworkError() async throws {
+        let ok = makeResponse(url: testURL, statusCode: 200)
+        let networkErr = URLError(.notConnectedToInternet)
+        let inner = SequenceTransport(
+            responses: [
+                (Data(), ok), // placeholder, won't be used
+                (Data("ok".utf8), ok)
+            ],
+            errors: [networkErr, nil]
+        )
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 3, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (data, resp) = try await transport.data(for: request)
+        #expect(String(data: data, encoding: .utf8) == "ok")
+        #expect(resp.statusCode == 200)
+        #expect(inner.callCount == 2)
+    }
+
+    @Test("respects maxRetries of zero")
+    func zeroRetries() async throws {
+        let fail = makeResponse(url: testURL, statusCode: 500)
+        let inner = SequenceTransport(responses: [
+            (Data("err".utf8), fail)
+        ])
+        let transport = RetryTransport(inner: inner, policy: RetryPolicy(maxRetries: 0, baseDelay: 0.01))
+        let request = URLRequest(url: testURL)
+
+        let (_, resp) = try await transport.data(for: request)
+        #expect(resp.statusCode == 500)
+        #expect(inner.callCount == 1)
+    }
+
+    @Test("conforms to HTTPTransportProtocol")
+    func conformsToProtocol() {
+        let transport: any HTTPTransportProtocol = RetryTransport()
+        _ = transport
+    }
+
+    @Test("default policy retries up to 3 times with full jitter")
+    func defaultPolicyMaxRetries() {
+        let policy = RetryPolicy()
+        #expect(policy.maxRetries == 3)
+        #expect(policy.baseDelay == 0.5)
+        #expect(policy.maxDelay == 30.0)
+        #expect(policy.jitter == .full)
+    }
+}
+
+@Suite("JitterStrategy")
+struct JitterStrategyTests {
+
+    @Test("none returns pure exponential delay")
+    func noJitter() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 60.0, jitter: .none)
+        for _ in 0..<50 {
+            // attempt 0: 1.0, attempt 1: 2.0, attempt 2: 4.0
+            #expect(policy.delay(forAttempt: 0, previousDelay: 1.0) == 1.0)
+            #expect(policy.delay(forAttempt: 1, previousDelay: 1.0) == 2.0)
+            #expect(policy.delay(forAttempt: 2, previousDelay: 2.0) == 4.0)
+        }
+    }
+
+    @Test("none respects maxDelay cap")
+    func noJitterCapped() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 3.0, jitter: .none)
+        #expect(policy.delay(forAttempt: 10, previousDelay: 3.0) == 3.0)
+    }
+
+    @Test("full jitter produces values in 0...exponentialDelay")
+    func fullJitter() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 5.0, jitter: .full)
+        for _ in 0..<100 {
+            let d0 = policy.delay(forAttempt: 0, previousDelay: 1.0)
+            #expect(d0 >= 0 && d0 <= 1.0)
+            let d3 = policy.delay(forAttempt: 3, previousDelay: 4.0)
+            #expect(d3 >= 0 && d3 <= 5.0) // capped at maxDelay
+        }
+    }
+
+    @Test("equal jitter guarantees minimum half of exponential delay")
+    func equalJitter() {
+        let policy = RetryPolicy(baseDelay: 2.0, maxDelay: 60.0, jitter: .equal)
+        for _ in 0..<100 {
+            // attempt 0: exponential = 2.0, half = 1.0, range [1.0...2.0]
+            let d0 = policy.delay(forAttempt: 0, previousDelay: 2.0)
+            #expect(d0 >= 1.0 && d0 <= 2.0)
+            // attempt 1: exponential = 4.0, half = 2.0, range [2.0...4.0]
+            let d1 = policy.delay(forAttempt: 1, previousDelay: 2.0)
+            #expect(d1 >= 2.0 && d1 <= 4.0)
+        }
+    }
+
+    @Test("equal jitter respects maxDelay cap")
+    func equalJitterCapped() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 3.0, jitter: .equal)
+        for _ in 0..<100 {
+            let d = policy.delay(forAttempt: 10, previousDelay: 3.0)
+            #expect(d >= 1.5 && d <= 3.0)
+        }
+    }
+
+    @Test("decorrelated jitter uses previous delay to widen range")
+    func decorrelatedJitter() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 60.0, jitter: .decorrelated)
+        for _ in 0..<100 {
+            // previousDelay = 2.0 → range [1.0...6.0]
+            let d = policy.delay(forAttempt: 1, previousDelay: 2.0)
+            #expect(d >= 1.0 && d <= 6.0)
+        }
+    }
+
+    @Test("decorrelated jitter respects maxDelay cap")
+    func decorrelatedJitterCapped() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 5.0, jitter: .decorrelated)
+        for _ in 0..<100 {
+            // previousDelay = 10.0 → upper = min(5.0, 30.0) = 5.0
+            let d = policy.delay(forAttempt: 3, previousDelay: 10.0)
+            #expect(d >= 1.0 && d <= 5.0)
+        }
+    }
+
+    @Test("decorrelated jitter falls back to baseDelay when previous is small")
+    func decorrelatedJitterSmallPrevious() {
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 60.0, jitter: .decorrelated)
+        for _ in 0..<100 {
+            // previousDelay = 0.1 → upper = 0.3, max(1.0, 0.3) = 1.0 → range [1.0...1.0]
+            let d = policy.delay(forAttempt: 0, previousDelay: 0.1)
+            #expect(d == 1.0)
+        }
+    }
+}
+
