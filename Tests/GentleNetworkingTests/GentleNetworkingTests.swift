@@ -2098,9 +2098,9 @@ struct RetryTransportTests {
 @Suite("JitterStrategy")
 struct JitterStrategyTests {
 
-    @Test("none returns pure exponential delay")
+    @Test("nil jitter returns pure exponential delay")
     func noJitter() {
-        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 60.0, jitter: .none)
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 60.0, jitter: nil)
         for _ in 0..<50 {
             // attempt 0: 1.0, attempt 1: 2.0, attempt 2: 4.0
             #expect(policy.delay(forAttempt: 0, previousDelay: 1.0) == 1.0)
@@ -2109,9 +2109,9 @@ struct JitterStrategyTests {
         }
     }
 
-    @Test("none respects maxDelay cap")
+    @Test("nil jitter respects maxDelay cap")
     func noJitterCapped() {
-        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 3.0, jitter: .none)
+        let policy = RetryPolicy(baseDelay: 1.0, maxDelay: 3.0, jitter: nil)
         #expect(policy.delay(forAttempt: 10, previousDelay: 3.0) == 3.0)
     }
 

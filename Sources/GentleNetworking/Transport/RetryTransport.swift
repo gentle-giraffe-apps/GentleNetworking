@@ -2,8 +2,6 @@
 import Foundation
 
 public enum JitterStrategy: Sendable {
-    /// No jitter — pure exponential backoff.
-    case none
     /// Full jitter: random(0 ... exponentialDelay). Spreads retries across the
     /// entire window, minimising collision probability in thundering-herd scenarios.
     case full
@@ -21,14 +19,14 @@ public struct RetryPolicy: Sendable {
     public let maxRetries: Int
     public let baseDelay: TimeInterval
     public let maxDelay: TimeInterval
-    public let jitter: JitterStrategy
+    public let jitter: JitterStrategy?
     public let shouldRetry: @Sendable (Int, any Error) -> Bool
 
     public init(
         maxRetries: Int = 3,
         baseDelay: TimeInterval = 0.5,
         maxDelay: TimeInterval = 30.0,
-        jitter: JitterStrategy = .full,
+        jitter: JitterStrategy? = .full,
         shouldRetry: @escaping @Sendable (Int, any Error) -> Bool = RetryPolicy.defaultShouldRetry
     ) {
         self.maxRetries = maxRetries
@@ -58,9 +56,9 @@ public struct RetryPolicy: Sendable {
         let exponential = baseDelay * pow(2.0, Double(attempt))
         let capped = min(exponential, maxDelay)
 
+        guard let jitter else { return capped }
+
         switch jitter {
-        case .none:
-            return capped
         case .full:
             return Double.random(in: 0...capped)
         case .equal:
