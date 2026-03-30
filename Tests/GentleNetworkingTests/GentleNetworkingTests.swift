@@ -2190,6 +2190,7 @@ struct JitterStrategyTests {
 
 private actor RefreshCounter {
     private(set) var count = 0
+    var isEmpty: Bool { count == 0 }
     func increment() { count += 1 }
 }
 
@@ -2213,7 +2214,7 @@ struct ReauthTransportTests {
         #expect(String(data: data, encoding: .utf8) == "ok")
         #expect(resp.statusCode == 200)
         #expect(inner.callCount == 1)
-        #expect(await counter.count == 0)
+        #expect(await counter.isEmpty)
     }
 
     @Test("passes through non-401 errors unchanged")
@@ -2232,7 +2233,7 @@ struct ReauthTransportTests {
         let (_, resp) = try await transport.data(for: URLRequest(url: url))
         #expect(resp.statusCode == 404)
         #expect(inner.callCount == 1)
-        #expect(await counter.count == 0)
+        #expect(await counter.isEmpty)
     }
 
     @Test("refreshes token and retries on 401")

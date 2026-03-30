@@ -357,11 +357,8 @@ let service = HTTPNetworkService(
         inner: RetryTransport(),          // retry transient errors first
         authService: keyChainAuthService,
         refreshToken: {
-            let new: TokenResponse = try await refreshService.request(
-                to: .refreshToken(token: currentRefresh),
-                via: apiEnvironment
-            )
-            try await keyChainAuthService.saveAccessToken(new.accessToken)
+            // 1. Call your refresh endpoint to obtain a new access credential
+            // 2. Save the new credential via authService so future requests use it
         }
     )
 )
