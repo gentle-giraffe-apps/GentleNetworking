@@ -281,6 +281,46 @@ let networkService = HTTPNetworkService(transport: transport)
 
 ---
 
+## 🔒 Seguridad
+
+GentleNetworking se apoya en App Transport Security (ATS) de Apple para la protección de la capa de transporte — TLS 1.2+, validación de certificados, forward secrecy — todo aplicado por el sistema operativo y habilitado por defecto.
+
+### Fijación de Certificados SSL
+
+Para apps con requisitos de seguridad elevados, usa el `PinningTransport` integrado con fijación de clave pública o de certificado:
+
+``` swift
+import CryptoKit
+
+// Fijación de clave pública (recomendado — sobrevive a renovaciones de certificado)
+let service = HTTPNetworkService(
+    transport: PinningTransport(
+        pinnedDomains: [
+            "api.example.com": PublicKeyPinningEvaluator(
+                pinnedKeyHashes: [primaryKeyHash, backupKeyHash]
+            )
+        ]
+    )
+)
+
+// Fijación de certificado (más simple, falla con cada renovación)
+let service = HTTPNetworkService(
+    transport: PinningTransport(
+        pinnedDomains: [
+            "api.example.com": CertificatePinningEvaluator(
+                pinnedCertificates: [certDERData]
+            )
+        ]
+    )
+)
+```
+
+Los dominios sin fijación utilizan la validación estándar de ATS. Implementa `ServerTrustEvaluator` para lógica de confianza personalizada.
+
+Consulta [SECURITY.md](SECURITY.md) para la guía completa incluyendo mejores prácticas, evaluadores personalizados y enfoques alternativos.
+
+---
+
 ## 🧭 Filosofía de Diseño
 
 GentleNetworking está construido alrededor de:

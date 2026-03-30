@@ -79,6 +79,14 @@ public protocol TokenInvalidationHandler: Sendable {
 ```
 Called by `HTTPNetworkService` on HTTP 401 before throwing.
 
+### ServerTrustEvaluator
+```swift
+public protocol ServerTrustEvaluator: Sendable {
+    func evaluate(_ trust: SecTrust, forHost host: String) throws
+}
+```
+SSL pinning evaluation strategy. Implement to define custom trust validation. Throw `ServerTrustError` on failure.
+
 ---
 
 ## Concrete Types
@@ -134,6 +142,38 @@ public struct MatchingTransport: HTTPTransportProtocol {
 }
 ```
 Wraps another transport; only forwards requests that match the pattern. Throws `MatchingTransportError.notMatched` otherwise.
+
+### PinningTransport : HTTPTransportProtocol
+```swift
+public struct PinningTransport: HTTPTransportProtocol {
+    public init(
+        pinnedDomains: [String: any ServerTrustEvaluator],
+        configuration: URLSessionConfiguration = .default
+    )
+    public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
+}
+```
+SSL pinning transport. Creates an internal `URLSession` with a delegate that routes TLS challenges through per-domain `ServerTrustEvaluator` instances. Unpinned domains use default trust evaluation.
+
+### PublicKeyPinningEvaluator : ServerTrustEvaluator
+```swift
+public struct PublicKeyPinningEvaluator: ServerTrustEvaluator {
+    public let pinnedKeyHashes: Set<Data>
+    public init(pinnedKeyHashes: Set<Data>)
+    public func evaluate(_ trust: SecTrust, forHost host: String) throws
+}
+```
+Pins SHA-256 hashes of server public keys. Extracts keys from the certificate chain via `SecCertificateCopyKey` + `SecKeyCopyExternalRepresentation`, hashes with CryptoKit SHA-256, and compares against the pinned set. Recommended over certificate pinning — survives cert renewals.
+
+### CertificatePinningEvaluator : ServerTrustEvaluator
+```swift
+public struct CertificatePinningEvaluator: ServerTrustEvaluator {
+    public let pinnedCertificates: Set<Data>
+    public init(pinnedCertificates: Set<Data>)
+    public func evaluate(_ trust: SecTrust, forHost host: String) throws
+}
+```
+Pins DER-encoded certificate bytes. Compares certificates in the chain via `SecCertificateCopyData` against the pinned set. Simpler but breaks on every certificate renewal.
 
 ### Endpoint : EndpointProtocol
 ```swift
@@ -239,6 +279,14 @@ case get = "GET", post = "POST", put = "PUT", delete = "DELETE", patch = "PATCH"
 ```swift
 case invalidResponseType
 case invalidStatusCode(Int?)
+```
+
+### ServerTrustError : Error, Sendable
+```swift
+case trustEvaluationFailed
+case noCertificateFound
+case noPublicKeyFound
+case certificatePinningFailed(host: String)
 ```
 
 ### NetworkServiceEmptyResponseResult
