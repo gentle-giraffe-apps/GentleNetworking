@@ -27,6 +27,7 @@
 - ✅ Встроенные Transport'ы с предустановленными ответами для тестирования
 - ✅ Повторные попытки с экспоненциальной задержкой и джиттером
 - ✅ Прозрачное обновление токенов и повторная аутентификация
+- ✅ Условный GET через ETag / If-None-Match / 304
 
 💬 **[Присоединяйтесь к обсуждению. Обратная связь и вопросы приветствуются](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -362,17 +363,41 @@ let service = HTTPNetworkService(
 )
 ```
 
+### ETagTransport
+
+Позволяет избежать повторной загрузки дорогостоящих неизменённых ресурсов. При первом GET заголовок `ETag` сервера и тело ответа кэшируются. Последующие GET отправляют `If-None-Match`; если сервер отвечает **304 Not Modified**, возвращается кэшированное тело без повторной передачи данных.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared)
+    )
+)
+```
+
+Внедрите пользовательский `ETagStoreProtocol` для хранения на диске или в базе данных:
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared),
+        store: MyDiskETagStore()
+    )
+)
+```
+
 ### Порядок стекирования
 
-Разместите `ReauthTransport` **снаружи**, а `RetryTransport` **внутри**:
+Разместите `ReauthTransport` **снаружи**, `RetryTransport` посередине, а `ETagTransport` **внутри**:
 
 ```
 ReauthTransport          ← перехватывает 401 после исчерпания попыток
   └─ RetryTransport      ← повторяет 429/500/503 с задержкой + джиттер
-       └─ URLSessionTransport (или PinningTransport)
+       └─ ETagTransport  ← условный GET через ETag / 304
+            └─ URLSessionTransport (или PinningTransport)
 ```
 
-`RetryTransport` уже пропускает 401 (`defaultShouldRetry` возвращает `false`), поэтому передаёт ошибки аутентификации напрямую в `ReauthTransport`, не расходуя попытки.
+`RetryTransport` уже пропускает 401 (`defaultShouldRetry` возвращает `false`), поэтому передаёт ошибки аутентификации напрямую в `ReauthTransport`, не расходуя попытки. `ETagTransport` находится внутри retry, чтобы повторные запросы также использовали кэш.
 
 ---
 
