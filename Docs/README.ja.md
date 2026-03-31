@@ -27,6 +27,7 @@
 - ✅ テスト用の定型レスポンストランスポートを内蔵
 - ✅ 指数バックオフとジッターによるリトライ
 - ✅ 透過的なトークンリフレッシュと再認証
+- ✅ ETag / If-None-Match / 304 による条件付き GET
 
 💬 **[ディスカッションに参加しましょう。フィードバックや質問を歓迎します](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -362,17 +363,41 @@ let service = HTTPNetworkService(
 )
 ```
 
+### ETagTransport
+
+コストの高い未変更リソースの再ダウンロードを回避します。最初のGETで、サーバーの`ETag`ヘッダーとレスポンスボディがキャッシュされます。以降のGETは`If-None-Match`を送信し、サーバーが**304 Not Modified**で応答した場合、ペイロードを再転送せずにキャッシュされたボディが返されます。
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared)
+    )
+)
+```
+
+ディスクバックまたはデータベースバックの永続化にはカスタム`ETagStoreProtocol`を注入します：
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared),
+        store: MyDiskETagStore()
+    )
+)
+```
+
 ### スタック順序
 
-`ReauthTransport`を**外側**に、`RetryTransport`を**内側**に配置します：
+`ReauthTransport`を**外側**に、`RetryTransport`を中間に、`ETagTransport`を**内側**に配置します：
 
 ```
 ReauthTransport          ← リトライ消費後に401をキャッチ
   └─ RetryTransport      ← 429/500/503をバックオフ+ジッターでリトライ
-       └─ URLSessionTransport（またはPinningTransport）
+       └─ ETagTransport  ← ETag / 304 による条件付き GET
+            └─ URLSessionTransport（またはPinningTransport）
 ```
 
-`RetryTransport`は401をスキップします（`defaultShouldRetry`が`false`を返す）ため、リトライを無駄にせず認証失敗を`ReauthTransport`に直接渡します。
+`RetryTransport`は401をスキップします（`defaultShouldRetry`が`false`を返す）ため、リトライを無駄にせず認証失敗を`ReauthTransport`に直接渡します。`ETagTransport`はリトライの内側に配置されるため、リトライされたリクエストもキャッシュの恩恵を受けます。
 
 ---
 

@@ -27,6 +27,7 @@ Uma biblioteca de networking leve, pronta para Swift 6, projetada para apps iOS 
 - ✅ Transports com respostas predefinidas para testes
 - ✅ Retry com backoff exponencial e jitter
 - ✅ Renovação de tokens e re-autenticação transparente
+- ✅ GET condicional via ETag / If-None-Match / 304
 
 💬 **[Participe da discussão. Feedback e perguntas são bem-vindos](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -362,17 +363,41 @@ let service = HTTPNetworkService(
 )
 ```
 
+### ETagTransport
+
+Evita o re-download de recursos caros e inalterados. No primeiro GET, o cabeçalho `ETag` do servidor e o corpo da resposta são armazenados em cache. GETs subsequentes enviam `If-None-Match`; se o servidor responder **304 Not Modified**, o corpo em cache é retornado sem transferir o payload novamente.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared)
+    )
+)
+```
+
+Injete um `ETagStoreProtocol` personalizado para persistência em disco ou banco de dados:
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared),
+        store: MyDiskETagStore()
+    )
+)
+```
+
 ### Ordem de Empilhamento
 
-Coloque `ReauthTransport` no **exterior** e `RetryTransport` no **interior**:
+Coloque `ReauthTransport` no **exterior**, `RetryTransport` no meio, e `ETagTransport` no **interior**:
 
 ```
 ReauthTransport          ← captura 401 após esgotar os retries
   └─ RetryTransport      ← repete 429/500/503 com backoff + jitter
-       └─ URLSessionTransport (ou PinningTransport)
+       └─ ETagTransport  ← GET condicional via ETag / 304
+            └─ URLSessionTransport (ou PinningTransport)
 ```
 
-`RetryTransport` já ignora 401 (`defaultShouldRetry` retorna `false`), então passa falhas de autenticação diretamente para `ReauthTransport` sem desperdiçar retries.
+`RetryTransport` já ignora 401 (`defaultShouldRetry` retorna `false`), então passa falhas de autenticação diretamente para `ReauthTransport` sem desperdiçar retries. `ETagTransport` fica dentro do retry para que requisições refeitas também se beneficiem do cache.
 
 ---
 

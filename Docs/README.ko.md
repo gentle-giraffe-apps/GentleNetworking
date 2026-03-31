@@ -27,6 +27,7 @@
 - ✅ 테스트를 위한 미리 정의된 응답 Transport 내장
 - ✅ 지수 백오프와 지터를 포함한 재시도
 - ✅ 투명한 토큰 갱신 및 재인증
+- ✅ ETag / If-None-Match / 304를 통한 조건부 GET
 
 💬 **[토론에 참여하세요. 피드백과 질문을 환영합니다](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -362,17 +363,41 @@ let service = HTTPNetworkService(
 )
 ```
 
+### ETagTransport
+
+변경되지 않은 고비용 리소스의 재다운로드를 방지합니다. 첫 번째 GET에서 서버의 `ETag` 헤더와 응답 본문이 캐시됩니다. 이후 GET은 `If-None-Match`를 전송하며, 서버가 **304 Not Modified**로 응답하면 페이로드를 다시 전송하지 않고 캐시된 본문이 반환됩니다.
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared)
+    )
+)
+```
+
+디스크 기반 또는 데이터베이스 기반 영속성을 위해 커스텀 `ETagStoreProtocol`을 주입합니다:
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared),
+        store: MyDiskETagStore()
+    )
+)
+```
+
 ### 스택 순서
 
-`ReauthTransport`를 **외부**에, `RetryTransport`를 **내부**에 배치합니다:
+`ReauthTransport`를 **외부**에, `RetryTransport`를 중간에, `ETagTransport`를 **내부**에 배치합니다:
 
 ```
 ReauthTransport          ← 재시도 소진 후 401을 캐치
   └─ RetryTransport      ← 백오프 + 지터로 429/500/503 재시도
-       └─ URLSessionTransport (또는 PinningTransport)
+       └─ ETagTransport  ← ETag / 304를 통한 조건부 GET
+            └─ URLSessionTransport (또는 PinningTransport)
 ```
 
-`RetryTransport`는 이미 401을 건너뜁니다 (`defaultShouldRetry`가 `false`를 반환), 따라서 재시도를 낭비하지 않고 인증 실패를 `ReauthTransport`에 직접 전달합니다.
+`RetryTransport`는 이미 401을 건너뜁니다 (`defaultShouldRetry`가 `false`를 반환), 따라서 재시도를 낭비하지 않고 인증 실패를 `ReauthTransport`에 직접 전달합니다. `ETagTransport`는 재시도 내부에 위치하여 재시도된 요청도 캐시의 이점을 받습니다.
 
 ---
 

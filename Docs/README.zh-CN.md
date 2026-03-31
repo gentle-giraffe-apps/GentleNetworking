@@ -27,6 +27,7 @@
 - ✅ 内置预设响应 Transport，方便测试
 - ✅ 指数退避和抖动的重试机制
 - ✅ 透明的令牌刷新和重新认证
+- ✅ 通过 ETag / If-None-Match / 304 实现条件性 GET
 
 💬 **[加入讨论。欢迎反馈和提问](https://github.com/gentle-giraffe-apps/GentleNetworking/discussions)**
 
@@ -362,17 +363,41 @@ let service = HTTPNetworkService(
 )
 ```
 
+### ETagTransport
+
+避免重新下载未更改的高开销资源。首次 GET 时，服务器的 `ETag` 头和响应体会被缓存。后续 GET 发送 `If-None-Match`；如果服务器返回 **304 Not Modified**，则直接返回缓存的响应体，无需再次传输数据。
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared)
+    )
+)
+```
+
+注入自定义 `ETagStoreProtocol` 以实现磁盘或数据库支持的持久化：
+
+``` swift
+let service = HTTPNetworkService(
+    transport: ETagTransport(
+        inner: URLSessionTransport(session: .shared),
+        store: MyDiskETagStore()
+    )
+)
+```
+
 ### 叠加顺序
 
-将 `ReauthTransport` 放在**外层**，`RetryTransport` 放在**内层**：
+将 `ReauthTransport` 放在**外层**，`RetryTransport` 放在中间，`ETagTransport` 放在**内层**：
 
 ```
 ReauthTransport          ← 在重试耗尽后捕获 401
   └─ RetryTransport      ← 使用退避 + 抖动重试 429/500/503
-       └─ URLSessionTransport（或 PinningTransport）
+       └─ ETagTransport  ← 通过 ETag / 304 实现条件性 GET
+            └─ URLSessionTransport（或 PinningTransport）
 ```
 
-`RetryTransport` 已经跳过 401（`defaultShouldRetry` 返回 `false`），因此它将认证失败直接传递给 `ReauthTransport`，不会浪费重试次数。
+`RetryTransport` 已经跳过 401（`defaultShouldRetry` 返回 `false`），因此它将认证失败直接传递给 `ReauthTransport`，不会浪费重试次数。`ETagTransport` 位于重试内层，使得重试的请求也能受益于缓存。
 
 ---
 

@@ -61,6 +61,8 @@ struct HTTPMethodTests {
 | `CannedRoutesTransportTests` | First-match, unique-match, no-match, missing URL |
 | `CannedResponseTransportTests` | Response, missing URL, custom headers |
 | `MatchingTransportTests` | Match pass-through, mismatch error |
+| `InMemoryETagStoreTests` | Store/retrieve, remove, removeAll, LRU eviction, LRU touch |
+| `ETagTransportTests` | Conditional GET, 304 cached response, ETag update, non-GET passthrough, custom store |
 | `RetryTransportTests` | Backoff, jitter strategies, retry/skip by status code |
 | `ReauthTransportTests` | 401 refresh+retry, concurrent serialization, composition with RetryTransport |
 | `CustomEndpointTests` | Enum-based EndpointProtocol (GET, POST, DELETE) |
