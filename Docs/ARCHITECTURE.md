@@ -26,6 +26,8 @@ GentleNetworking/
 │   └── Transport/
 │       ├── CannedResponseTransport.swift  # Fixed-response transport + CannedResponse value type
 │       ├── CannedRoutesTransport.swift    # Multi-route transport with match modes
+│       ├── ETagStore.swift                # ETagStoreProtocol + InMemoryETagStore (actor, LRU)
+│       ├── ETagTransport.swift            # Conditional GET via ETag / If-None-Match / 304
 │       ├── HTTPTransportProtocol.swift    # HTTPTransportProtocol (single method)
 │       ├── MatchingTransport.swift        # Pattern-guarded transport wrapper
 │       ├── ReauthTransport.swift          # 401 intercept → refresh token → retry once
@@ -47,7 +49,7 @@ GentleNetworking/
     └── fastlane/Fastfile                  # build, package_tests, coverage_xml lanes
 ```
 
-**20 source files, 1 test file, 1 demo app**
+**22 source files, 1 test file, 1 demo app**
 
 ## Layer Summary
 
@@ -71,6 +73,7 @@ GentleNetworking/
 ┌──────────────────────▼──────────────────────────┐
 │  Transport                                       │
 │  URLSessionTransport        (production)         │
+│  ETagTransport              (conditional GET)    │
 │  RetryTransport             (backoff + jitter)    │
 │  ReauthTransport            (401 → refresh)       │
 │  CannedResponseTransport    (single response)    │
@@ -87,6 +90,8 @@ GentleNetworking/
 HTTPNetworkService
 ├── HTTPTransportProtocol
 │   ├── URLSessionTransport          (URLSession.shared)
+│   ├── ETagTransport                (ETagStoreProtocol, any HTTPTransportProtocol)
+│   │   └── InMemoryETagStore        (actor, LRU cache)
 │   ├── RetryTransport               (RetryPolicy, any HTTPTransportProtocol)
 │   ├── ReauthTransport              (AuthServiceProtocol, any HTTPTransportProtocol)
 │   ├── CannedResponseTransport      (CannedResponse)

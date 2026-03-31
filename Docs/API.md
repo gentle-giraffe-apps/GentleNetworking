@@ -175,6 +175,48 @@ public struct CertificatePinningEvaluator: ServerTrustEvaluator {
 ```
 Pins DER-encoded certificate bytes. Compares certificates in the chain via `SecCertificateCopyData` against the pinned set. Simpler but breaks on every certificate renewal.
 
+### ETagTransport : HTTPTransportProtocol
+```swift
+public struct ETagTransport: HTTPTransportProtocol {
+    public init(
+        inner: HTTPTransportProtocol = URLSessionTransport(session: .shared),
+        store: ETagStoreProtocol = InMemoryETagStore()
+    )
+    public func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse)
+}
+```
+Conditional GET transport. Caches ETag values from successful GET responses and sends `If-None-Match` on subsequent requests. On HTTP 304, returns the cached response body. Non-GET requests pass through unchanged.
+
+### ETagStoreProtocol
+```swift
+public protocol ETagStoreProtocol: Sendable {
+    func cachedResponse(for key: String) async -> ETagCacheEntry?
+    func store(_ entry: ETagCacheEntry, for key: String) async
+    func remove(for key: String) async
+    func removeAll() async
+}
+```
+Cache storage abstraction for ETag entries. Implement for custom persistence (disk, database).
+
+### ETagCacheEntry
+```swift
+public struct ETagCacheEntry: Sendable {
+    public let etag: String
+    public let data: Data
+    public let response: HTTPURLResponse
+    public init(etag: String, data: Data, response: HTTPURLResponse)
+}
+```
+Cached response data paired with its ETag value.
+
+### InMemoryETagStore : ETagStoreProtocol
+```swift
+public actor InMemoryETagStore: ETagStoreProtocol {
+    public init(maxEntries: Int = 100)
+}
+```
+Actor-isolated in-memory LRU cache. Evicts least-recently-used entries when `maxEntries` is exceeded.
+
 ### ReauthTransport : HTTPTransportProtocol
 ```swift
 public struct ReauthTransport: HTTPTransportProtocol {

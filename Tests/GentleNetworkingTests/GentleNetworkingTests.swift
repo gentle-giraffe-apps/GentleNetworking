@@ -1932,8 +1932,8 @@ private final class SequenceTransport: HTTPTransportProtocol, @unchecked Sendabl
     }
 }
 
-private func makeResponse(url: URL, statusCode: Int) throws -> HTTPURLResponse {
-    try #require(HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: "HTTP/1.1", headerFields: nil))
+private func makeResponse(url: URL, statusCode: Int, headerFields: [String: String]? = nil) throws -> HTTPURLResponse {
+    try #require(HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: "HTTP/1.1", headerFields: headerFields))
 }
 
 @Suite("RetryTransport")
@@ -2329,6 +2329,242 @@ struct ReauthTransportTests {
         #expect(await counter.entries.count == 1)
         // call 1: 401 (RetryTransport passes through), call 2: 500 (RetryTransport retries), call 3: 200
         #expect(inner.callCount == 3)
+    }
+}
+
+// MARK: - ETagTransport Tests
+
+private final class RecordingTransport: HTTPTransportProtocol, @unchecked Sendable {
+    private(set) var receivedRequests: [URLRequest] = []
+    private var responses: [(Data, HTTPURLResponse)]
+    private var index = 0
+
+    init(responses: [(Data, HTTPURLResponse)]) {
+        self.responses = responses
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        receivedRequests.append(request)
+        let i = index
+        index += 1
+        return responses[i]
+    }
+}
+
+@Suite("InMemoryETagStore")
+struct InMemoryETagStoreTests {
+
+    @Test("stores and retrieves a cache entry")
+    func storeAndRetrieve() async throws {
+        let store = InMemoryETagStore()
+        let url = try #require(URL(string: "https://api.example.com/data"))
+        let response = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"abc\""])
+        let entry = ETagCacheEntry(etag: "\"abc\"", data: Data("hello".utf8), response: response)
+
+        await store.store(entry, for: "https://api.example.com/data")
+        let cached = await store.cachedResponse(for: "https://api.example.com/data")
+
+        #expect(cached?.etag == "\"abc\"")
+        #expect(cached?.data == Data("hello".utf8))
+    }
+
+    @Test("returns nil for unknown key")
+    func missReturnsNil() async {
+        let store = InMemoryETagStore()
+        let cached = await store.cachedResponse(for: "https://api.example.com/missing")
+        #expect(cached == nil)
+    }
+
+    @Test("removes a cache entry")
+    func remove() async throws {
+        let store = InMemoryETagStore()
+        let url = try #require(URL(string: "https://api.example.com/data"))
+        let response = try makeResponse(url: url, statusCode: 200)
+        let entry = ETagCacheEntry(etag: "\"x\"", data: Data(), response: response)
+
+        await store.store(entry, for: "key")
+        await store.remove(for: "key")
+        #expect(await store.cachedResponse(for: "key") == nil)
+    }
+
+    @Test("removeAll clears all entries")
+    func removeAll() async throws {
+        let store = InMemoryETagStore()
+        let url = try #require(URL(string: "https://api.example.com/data"))
+        let response = try makeResponse(url: url, statusCode: 200)
+
+        await store.store(ETagCacheEntry(etag: "\"a\"", data: Data(), response: response), for: "k1")
+        await store.store(ETagCacheEntry(etag: "\"b\"", data: Data(), response: response), for: "k2")
+        await store.removeAll()
+
+        #expect(await store.cachedResponse(for: "k1") == nil)
+        #expect(await store.cachedResponse(for: "k2") == nil)
+    }
+
+    @Test("evicts LRU entries when maxEntries exceeded")
+    func eviction() async throws {
+        let store = InMemoryETagStore(maxEntries: 2)
+        let url = try #require(URL(string: "https://api.example.com/data"))
+        let response = try makeResponse(url: url, statusCode: 200)
+
+        await store.store(ETagCacheEntry(etag: "\"1\"", data: Data("one".utf8), response: response), for: "k1")
+        await store.store(ETagCacheEntry(etag: "\"2\"", data: Data("two".utf8), response: response), for: "k2")
+        await store.store(ETagCacheEntry(etag: "\"3\"", data: Data("three".utf8), response: response), for: "k3")
+
+        #expect(await store.cachedResponse(for: "k1") == nil)
+        #expect(await store.cachedResponse(for: "k2") != nil)
+        #expect(await store.cachedResponse(for: "k3") != nil)
+    }
+
+    @Test("LRU touch promotes recently accessed entry")
+    func lruTouch() async throws {
+        let store = InMemoryETagStore(maxEntries: 2)
+        let url = try #require(URL(string: "https://api.example.com/data"))
+        let response = try makeResponse(url: url, statusCode: 200)
+
+        await store.store(ETagCacheEntry(etag: "\"1\"", data: Data(), response: response), for: "k1")
+        await store.store(ETagCacheEntry(etag: "\"2\"", data: Data(), response: response), for: "k2")
+
+        // Touch k1 so k2 becomes least-recently-used
+        _ = await store.cachedResponse(for: "k1")
+
+        await store.store(ETagCacheEntry(etag: "\"3\"", data: Data(), response: response), for: "k3")
+
+        #expect(await store.cachedResponse(for: "k1") != nil)
+        #expect(await store.cachedResponse(for: "k2") == nil)
+        #expect(await store.cachedResponse(for: "k3") != nil)
+    }
+}
+
+@Suite("ETagTransport")
+struct ETagTransportTests {
+
+    @Test("first request passes through without If-None-Match")
+    func firstRequestNoHeader() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body = Data(#"{"id":1}"#.utf8)
+        let response = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"v1\""])
+        let inner = RecordingTransport(responses: [(body, response)])
+
+        let transport = ETagTransport(inner: inner)
+        let (data, resp) = try await transport.data(for: URLRequest(url: url))
+
+        #expect(data == body)
+        #expect(resp.statusCode == 200)
+        #expect(inner.receivedRequests[0].value(forHTTPHeaderField: "If-None-Match") == nil)
+    }
+
+    @Test("second request sends If-None-Match and returns cached data on 304")
+    func conditionalGet304() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body = Data(#"{"id":1}"#.utf8)
+        let response200 = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"v1\""])
+        let response304 = try makeResponse(url: url, statusCode: 304)
+        let inner = RecordingTransport(responses: [(body, response200), (Data(), response304)])
+
+        let transport = ETagTransport(inner: inner)
+
+        // First request — caches response
+        _ = try await transport.data(for: URLRequest(url: url))
+
+        // Second request — should send If-None-Match and get cached data back
+        let (data, resp) = try await transport.data(for: URLRequest(url: url))
+
+        #expect(inner.receivedRequests[1].value(forHTTPHeaderField: "If-None-Match") == "\"v1\"")
+        #expect(data == body)
+        #expect(resp.statusCode == 200)
+    }
+
+    @Test("updated ETag replaces cached entry")
+    func updatedETag() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body1 = Data(#"{"v":1}"#.utf8)
+        let body2 = Data(#"{"v":2}"#.utf8)
+        let resp1 = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"v1\""])
+        let resp2 = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"v2\""])
+        let resp304 = try makeResponse(url: url, statusCode: 304)
+        let inner = RecordingTransport(responses: [(body1, resp1), (body2, resp2), (Data(), resp304)])
+
+        let transport = ETagTransport(inner: inner)
+
+        _ = try await transport.data(for: URLRequest(url: url))
+        _ = try await transport.data(for: URLRequest(url: url))
+
+        // Third request — should use v2 etag and return body2
+        let (data, _) = try await transport.data(for: URLRequest(url: url))
+
+        #expect(inner.receivedRequests[2].value(forHTTPHeaderField: "If-None-Match") == "\"v2\"")
+        #expect(data == body2)
+    }
+
+    @Test("non-GET requests pass through without caching")
+    func postPassesThrough() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body = Data(#"{"ok":true}"#.utf8)
+        let response = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"v1\""])
+        let inner = RecordingTransport(responses: [(body, response)])
+
+        let transport = ETagTransport(inner: inner)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        let (data, _) = try await transport.data(for: request)
+
+        #expect(data == body)
+        #expect(inner.receivedRequests[0].value(forHTTPHeaderField: "If-None-Match") == nil)
+    }
+
+    @Test("response without ETag header is not cached")
+    func noETagHeaderNotCached() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body = Data(#"{"id":1}"#.utf8)
+        let response = try makeResponse(url: url, statusCode: 200)
+        let inner = RecordingTransport(responses: [(body, response), (body, response)])
+
+        let transport = ETagTransport(inner: inner)
+
+        _ = try await transport.data(for: URLRequest(url: url))
+        _ = try await transport.data(for: URLRequest(url: url))
+
+        // Second request should NOT have If-None-Match since first response had no ETag
+        #expect(inner.receivedRequests[1].value(forHTTPHeaderField: "If-None-Match") == nil)
+    }
+
+    @Test("custom ETagStoreProtocol is used")
+    func customStore() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body = Data(#"{"id":1}"#.utf8)
+        let response200 = try makeResponse(url: url, statusCode: 200, headerFields: ["Etag": "\"v1\""])
+        let response304 = try makeResponse(url: url, statusCode: 304)
+        let inner = RecordingTransport(responses: [(body, response200), (Data(), response304)])
+
+        let store = InMemoryETagStore(maxEntries: 50)
+        let transport = ETagTransport(inner: inner, store: store)
+
+        _ = try await transport.data(for: URLRequest(url: url))
+        let (data, _) = try await transport.data(for: URLRequest(url: url))
+
+        #expect(data == body)
+        // Verify the store has the entry
+        let cached = await store.cachedResponse(for: url.absoluteString)
+        #expect(cached?.etag == "\"v1\"")
+    }
+
+    @Test("error responses are not cached")
+    func errorNotCached() async throws {
+        let url = try #require(URL(string: "https://api.example.com/items"))
+        let body = Data(#"{"error":"bad"}"#.utf8)
+        let response = try makeResponse(url: url, statusCode: 500, headerFields: ["Etag": "\"err\""])
+        let ok = try makeResponse(url: url, statusCode: 200)
+        let inner = RecordingTransport(responses: [(body, response), (Data("ok".utf8), ok)])
+
+        let transport = ETagTransport(inner: inner)
+
+        _ = try await transport.data(for: URLRequest(url: url))
+        _ = try await transport.data(for: URLRequest(url: url))
+
+        // Second request should NOT have If-None-Match since 500 was not cached
+        #expect(inner.receivedRequests[1].value(forHTTPHeaderField: "If-None-Match") == nil)
     }
 }
 
