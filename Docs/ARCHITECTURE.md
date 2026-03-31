@@ -119,7 +119,7 @@ MockKeyChainStore                    (standalone actor, implements KeyChainStore
 
 ## Security
 
-The default `URLSessionTransport` uses `URLSession.shared`, which inherits iOS App Transport Security (TLS 1.2+, system trust store, forward secrecy). No built-in certificate pinning — consumers who need pinning inject a custom `URLSession` with a pinning delegate into `URLSessionTransport(session:)`, or implement `HTTPTransportProtocol` directly. See [SECURITY.md](SECURITY.md) for details.
+The default `URLSessionTransport` uses `URLSession.shared`, which inherits iOS App Transport Security (TLS 1.2+, system trust store, forward secrecy). For apps with elevated security requirements, `PinningTransport` provides built-in SSL pinning with `PublicKeyPinningEvaluator` and `CertificatePinningEvaluator`. Alternatively, consumers can inject a custom `URLSession` with a pinning delegate into `URLSessionTransport(session:)`, or implement `HTTPTransportProtocol` directly. See [SECURITY.md](SECURITY.md) for details.
 
 ## Imports
 
