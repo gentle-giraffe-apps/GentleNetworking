@@ -438,7 +438,7 @@ struct IntegrationTransportTests {
     @Test("URLSessionTransport returns valid data and HTTPURLResponse")
     func rawTransport() async throws {
         let transport = URLSessionTransport(session: .shared)
-        let url = URL(string: "https://jsonplaceholder.typicode.com/posts/1")!
+        let url = try #require(URL(string: "https://jsonplaceholder.typicode.com/posts/1"))
         let request = URLRequest(url: url)
         let (data, response) = try await transport.data(for: request)
         #expect(response.statusCode == 200)
